@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 namespace Overworld.Data {
+
   public partial class Entity : Model<Entity, Entity.Type>, IUnique {
 
     static Dictionary<string, int> _entityUsedNames
@@ -23,7 +24,7 @@ namespace Overworld.Data {
     /// </summary>
     public string Name {
       get;
-      internal set;
+      set;
     }
 
     /// <summary>
@@ -39,20 +40,20 @@ namespace Overworld.Data {
     /// <param name="builder"></param>
     Entity(IBuilder<Entity> builder) 
       : this(
-        builder?.GetParam(nameof(Name), (builder.Archetype as Type).Name) 
-          ?? (builder.Archetype as Type).Name,
-        (builder?.GetParam(nameof(IUnique.Id), (builder.Archetype as Type).Name))
+        builder?.GetParam(nameof(Name), (builder.Archetype as Type).Id.Name) 
+          ?? (builder.Archetype as Type).Id.Name,
+        (builder?.GetParam(nameof(IUnique.Id), new System.Guid().ToString()))
     ){}
 
     /// <summary>
     /// Make a new entity
     /// </summary>
-    public Entity(string name, string uniqueName = null) : base() {
-      Name = name ?? uniqueName;
-      string key = uniqueName ?? Name;
+    public Entity(string name, string uniqueId = null) : base() {
+      Name = name ?? uniqueId;
+      string key = uniqueId ?? Name;
       if(_entityUsedNames.ContainsKey(key ?? "__none_")) {
-        _entityUsedNames[uniqueName] = _entityUsedNames[uniqueName] + 1;
-        key += _entityUsedNames[uniqueName].ToString();
+        _entityUsedNames[uniqueId] = _entityUsedNames[uniqueId] + 1;
+        key += _entityUsedNames[uniqueId].ToString();
       }
 
       Id = key;

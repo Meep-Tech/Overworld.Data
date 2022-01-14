@@ -6,19 +6,33 @@ namespace Overworld.Data {
     /// <summary>
     /// A type of entity
     /// </summary>
-    public abstract partial class Type : Archetype<Entity, Entity.Type> {
+    public abstract partial class Type : Archetype<Entity, Entity.Type>, IPortable {
 
-      /// <summary>
-      /// The name of this type of entity
-      /// </summary>
-      public string Name {
+      public string ResourceKey {
         get;
       }
 
-      protected Type(Identity id, string name)
-        : base(id) {
-        Name = name;
+      /// <summary>
+      /// The package name that this came from.
+      /// </summary>
+      public virtual string PackageName {
+        get => _packageName ?? DefaultPackageName;
+        protected set => _packageName = value;
+      } string _packageName;
+
+      /// <summary>
+      /// The package name that this came from.
+      /// </summary>
+      public virtual string DefaultPackageName {
+        get;
+      } = "-Entities";
+
+      protected internal Type(string resourceKey, Identity id)
+        : base(id ?? new Identity(resourceKey)) {
       }
+
+      Type()
+        : base(new Identity("Basic Entity")) {}
     }
   }
 }

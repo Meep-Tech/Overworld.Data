@@ -13,7 +13,7 @@ namespace Overworld.Data {
       /// These can be built by files
       /// </summary>
       [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-      public partial class Type : Archetype<Animation, Animation.Type> {
+      public partial class Type : Archetype<Animation, Animation.Type>, IPortable {
 
         #region Config
 
@@ -88,6 +88,28 @@ namespace Overworld.Data {
           get;
         } = true;
 
+        /// <summary>
+        /// The key for this resource
+        /// </summary>
+        public string ResourceKey {
+          get;
+        }
+
+        /// <summary>
+        /// The package name that this came from.
+        /// </summary>
+        public virtual string PackageName {
+          get => _packageName ?? DefaultPackageName;
+          protected set => _packageName = value;
+        } string _packageName;
+
+        /// <summary>
+        /// The package name that this came from.
+        /// </summary>
+        public virtual string DefaultPackageName {
+          get;
+        } = "-EntityAnimations";
+
         #endregion
 
         /// <summary>
@@ -100,11 +122,12 @@ namespace Overworld.Data {
         /// <summary>
         /// Import constructor
         /// </summary>
-        internal Type(JObject config, AnimationClip clip, IEnumerable<Tag> tags = null)
+        internal Type(string resourceKey, JObject config, AnimationClip clip, IEnumerable<Tag> tags = null)
           : this(new Identity(
               config["name"].Value<string>(),
               config["namespace"].Value<string>()
           )) {
+          ResourceKey = resourceKey;
           Clip = clip;
           IsBuildFromAnAssembly = false;
           Namespace = config["namespace"].Value<string>();
@@ -116,6 +139,12 @@ namespace Overworld.Data {
           ShouldScaleToFitEntityByDefault = config["scaleToFitEntity"].Value<bool>();
         }
 
+        /// <summary>
+        /// Import a type from a config and data
+        /// </summary>
+        /*public static Type Import(JObject config, AnimationClip clip, IEnumerable<Tag> tags = null)
+          => new Type(config, clip, tags);
+        */
         /// <summary>
         /// Build a model from this animation type
         /// </summary>
