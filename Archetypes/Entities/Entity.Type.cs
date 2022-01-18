@@ -1,4 +1,7 @@
 ﻿using Meep.Tech.Data;
+using Meep.Tech.Data.Utility;
+using System;
+using System.Collections.Generic;
 
 namespace Overworld.Data {
   public partial class Entity {
@@ -6,11 +9,23 @@ namespace Overworld.Data {
     /// <summary>
     /// A type of entity
     /// </summary>
-    public abstract partial class Type : Archetype<Entity, Entity.Type>, IPortable {
+    public abstract partial class Type : Archetype<Entity, Entity.Type>, IPortableArchetype {
 
+      /// <summary>
+      /// <inheritdoc/>
+      /// </summary>
       public string ResourceKey {
         get;
       }
+
+      /// <summary>
+      /// Example, how to add a entity component that will be carried to the child.
+      /// TODO: Remove test
+      /// </summary>
+      /*public override HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors
+        => base.InitialUnlinkedModelComponentCtors.Append(builder => {
+          return new Entites.Components.DoEveryFrameHook();
+        });*/
 
       /// <summary>
       /// The package name that this came from.
@@ -27,6 +42,9 @@ namespace Overworld.Data {
         get;
       } = "-Entities";
 
+      /// <summary>
+      /// Used to make a new type of entity
+      /// </summary>
       protected internal Type(string resourceKey, Identity id)
         : base(id ?? new Identity(resourceKey)) {
       }

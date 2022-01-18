@@ -6,7 +6,10 @@ namespace Overworld.Data {
     public partial class Animation {
       public partial class Type {
 
-        public new class Identity : Archetype<Entity.Animation, Entity.Animation.Type>.Identity {
+        /// <summary>
+        /// Animation type id
+        /// </summary>
+        public new class Identity : Data.Animation.Type.Identity {
           protected internal Identity(string name, string keyPrefix = null) 
             : base(name, keyPrefix, baseKeyStringOverride: "") { }
         }

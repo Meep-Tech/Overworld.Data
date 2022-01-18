@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Overworld.Data {
-  public interface IPortable {
+  public interface IPortableArchetype {
     public string ResourceKey {
       get;
     }

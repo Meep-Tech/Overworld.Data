@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Meep.Tech.Data;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Overworld.Data.IO;
@@ -12,6 +13,9 @@ namespace Overworld.Data {
 
   public partial struct Tile {
 
+    /// <summary>
+    /// Used to import and export tile types.
+    /// </summary>
     public class Porter : ArchetypePorter<Tile.Type> {
 
       /// <summary>
@@ -39,7 +43,7 @@ namespace Overworld.Data {
         = "DimensionsInTiles";
 
       /// <summary>
-      /// Takes an Action<Vector2Int, UnityEngine.Tilemaps.Tile> with the params:
+      /// Takes an Action[Vector2Int, UnityEngine.Tilemaps.Tile] with the params:
       ///   tile location in it's tilemap
       ///   the generated unity tile
       /// </summary>
@@ -56,11 +60,24 @@ namespace Overworld.Data {
       /// </summary>
       public override string DefaultPackageName {
         get;
-      } = "-Tiles";
+      } = "_tiles";
 
+      /// <summary>
+      /// Make a new tile importer. This is made at startup.
+      /// TODO: these should be singletons probably.
+      /// </summary>
       public Porter(User currentUser) 
         : base(currentUser) {}
 
+      /// <summary>
+      /// Imports the archetyps, assuming the one file is an image or config.json
+      /// 
+      /// </summary>
+      /// <param name="options">
+      /// - PixelsPerTileOption: the pixel diameter of imported tiles.
+      /// - (optional) InPlaceTileCallbackOption: Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
+      /// </param>
+      /// <returns></returns>
       protected override IEnumerable<Type> _importArchetypesFromExternalFile(
         string externalFileLocation,
         string resourceKey,
@@ -68,45 +85,63 @@ namespace Overworld.Data {
         string packageKey = null,
         Dictionary<string, object> options = null
       ) {
-        (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, UnityEngine.Tilemaps.Tile[,] inPlace)
+        (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
           = _importUnityTilesFrom(
             externalFileLocation,
             (int)options[PixelsPerTileOption],
             false,
             options.TryGetValue(ProvidedSheetDimensionsOption, out object foundDimensions)
-              ? foundDimensions as Vector2?
+              ? foundDimensions as Vector2Int?
               : null
           );
-
-        if(options.ContainsKey(InPlaceTileCallbackOption)) {
-          for(int x = 0; x < inPlace.GetLength(0); x++) {
-            for(int y = 0; y < inPlace.GetLength(1); y++) {
-              ((Action<Vector2Int, UnityEngine.Tilemaps.Tile>)options[InPlaceTileCallbackOption]).Invoke(
-                new Vector2Int(x, y),
-                inPlace[x, y]
-              );
-            }
-          }
-        }
 
         int? index = null;
         if(all.Count > 0) {
           index = 0;
         }
 
-        return all.Select(tile => {
+        Dictionary<Hash128, Tile.Type> types
+          = new();
+
+        all.ForEach(tile => {
           string currentName = $"{name}{(index is not null ? $"-{++index}" : "")}";
           string currentKey = $"{resourceKey}{(index is not null ? $"-{index}" : "")}";
-          return new Tile.Type(
-            currentName,
-            currentKey,
-            packageKey,
-            tile.Value,
-            tile.Key
+          types.Add(
+            tile.Key,
+            new Tile.Type(
+              currentName,
+              currentKey,
+              packageKey,
+              tile.Value,
+              tile.Key
+            ) {
+              LinkArchetypeToTileDataOnSet = false
+            }
           );
         });
+
+        if(options.ContainsKey(InPlaceTileCallbackOption)) {
+          locations.ForEach(e =>
+            ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
+              e.Key,
+              types[e.Value]
+            )
+          );
+        }
+
+        return types.Values;
       }
 
+
+      /// <summary>
+      /// Imports the archetyps, assuming at least one of the tiles is an image and one may be an config.json
+      /// </summary>
+      /// <param name="options">
+      /// - PixelsPerTileOption: the pixel diameter of imported tiles.
+      /// - (optional) ProvidedSheetDimensionsOption: if the image is a sprite sheet, you can provide a custom number of tiles to pull from it
+      /// - (optional) InPlaceTileCallbackOption: Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
+      /// </param>
+      /// <returns></returns>
       protected override IEnumerable<Type> _importArchetypesFromExternalFiles(
         string[] externalFileLocations,
         string resourceKey,
@@ -114,7 +149,7 @@ namespace Overworld.Data {
         string packageKey = null,
         Dictionary<string, object> options = null
       ) {
-        string configFile = externalFileLocations.FirstOrDefault(fileName => fileName == IPorter.ConfigFileName);
+        string configFile = externalFileLocations.FirstOrDefault(fileName => fileName == IArchetypePorter.ConfigFileName);
         if(configFile is null) {
           throw new NotSupportedException($"Multi-File imports for Tiles must have a config. Animations may be implimented this way in the future.");
         }
@@ -143,7 +178,7 @@ namespace Overworld.Data {
             diameter = (int)options[PixelsPerTileOption];
         }
 
-        (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, UnityEngine.Tilemaps.Tile[,] inPlace)
+        (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
           = _importUnityTilesFrom(
             tileMap,
             diameter,
@@ -152,18 +187,7 @@ namespace Overworld.Data {
             dimensionsInTiles
           );
 
-        if(options.ContainsKey(InPlaceTileCallbackOption)) {
-          for(int x = 0; x < inPlace.GetLength(0); x++) {
-            for(int y = 0; y < inPlace.GetLength(1); y++) {
-              ((Action<Vector2Int, UnityEngine.Tilemaps.Tile>)options[InPlaceTileCallbackOption]).Invoke(
-                new Vector2Int(x, y),
-                inPlace[x, y]
-              );
-            }
-          }
-        }
-
-        return all.Select(tile =>
+         var @return = all.Select(tile =>
           new Tile.Type(
             config.TryGetValue(NameConfigKey, out JToken value)
               ? value.Value<string>()
@@ -172,13 +196,30 @@ namespace Overworld.Data {
             packageKey,
             tile.Value,
             tile.Key
-          )
+          ) {
+            LinkArchetypeToTileDataOnSet = false
+          }
         );
+
+
+        if(options.ContainsKey(InPlaceTileCallbackOption)) {
+          locations.ForEach(e =>
+            ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
+              e.Key,
+              @return.First()
+            )
+          );
+        }
+
+        return @return;
       }
 
+      /// <summary>
+      /// Saves each tile as it's own image with a config for import
+      /// </summary>
       protected override string[] _serializeArchetypeToModFiles(Data.Tile.Type archetype, string packageDirectoryPath) {
         // tile needs to save the sprite, and the config.json
-        List<string> createdFiles = new List<string>();
+        List<string> createdFiles = new();
         Texture2D texture = archetype.DefaultBackground?.sprite.texture;
         byte[] imageData = texture?.EncodeToPNG();
 
@@ -188,7 +229,7 @@ namespace Overworld.Data {
           File.WriteAllBytes(imageFileName, imageData);
         }
 
-        string configFileName = Path.Combine(packageDirectoryPath, IPorter.ConfigFileName);
+        string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
         createdFiles.Add(configFileName);
         JObject config = new() {
           { NameConfigKey, JToken.FromObject(archetype.Id.Name) }
@@ -206,7 +247,7 @@ namespace Overworld.Data {
       /// Import a collection of tiles from an image location
       /// </summary>
       (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all,
-        UnityEngine.Tilemaps.Tile[,] inPlace
+        Dictionary<Vector2Int, Hash128> locations
       ) _importUnityTilesFrom(string imageLocation, int? tileWidthInPixels, bool isIndividual, Vector2? providedTileDimensions) {
         Texture2D spriteSheet = new(2, 2);
         Dictionary<Hash128, UnityEngine.Tilemaps.Tile> tileTypes
@@ -235,8 +276,8 @@ namespace Overworld.Data {
 
           return (new Dictionary<Hash128, UnityEngine.Tilemaps.Tile> { 
             { tile.GetTileHash(), tile } 
-          }, new UnityEngine.Tilemaps.Tile[,] { 
-            { tile} 
+          }, new Dictionary<Vector2Int, Hash128> {
+            {new Vector2Int(0,0),  tile.GetTileHash()}
           });
         }
 
@@ -261,8 +302,8 @@ namespace Overworld.Data {
           }
         }
 
-        (Dictionary<Hash128, UnityEngine.Tilemaps.Tile> all, UnityEngine.Tilemaps.Tile[,] inPlace) @return
-          = (new(), new UnityEngine.Tilemaps.Tile[sheetTileDimensions.width,sheetTileDimensions.height]);
+        (Dictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations) @return
+          = (new(), new());
 
         for(int x = 0; x < sheetTileDimensions.width; x++) {
           for(int y = 0; y < sheetTileDimensions.height; y++) {
@@ -288,16 +329,16 @@ namespace Overworld.Data {
             );
             Hash128 tileHash = tile.GetTileHash();
             // see if this tile already exists in this world:
-            if(@return.all.TryGetValue(tileHash, out UnityEngine.Tilemaps.Tile foundLocal)) {
-              //ScriptableObject.Destroy(tile);
-              tile = foundLocal;
-            } else if(tileTypes.TryGetValue(tileHash, out UnityEngine.Tilemaps.Tile existing)) {
-              //ScriptableObject.Destroy(tile);
-              tile = existing;
+            if(@return.all.TryGetValue(tileHash, out _)) {
+              ScriptableObject.Destroy(tile);
+              //tile = foundLocal;
+            } else if(tileTypes.TryGetValue(tileHash, out _)) {
+              ScriptableObject.Destroy(tile);
+              //tile = existing;
             } else 
               @return.all.Add(tileHash, tile);
 
-            @return.inPlace[x, y] = tile;
+            @return.locations.Add(new(x, y), tileHash);
           }
         }
 

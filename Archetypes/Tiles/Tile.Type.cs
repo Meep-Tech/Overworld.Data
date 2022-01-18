@@ -8,7 +8,7 @@ namespace Overworld.Data {
     /// Archetypes for tiles.
     /// </summary>
     [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-    public partial class Type : Archetype<Tile, Tile.Type>, IPortable {
+    public partial class Type : Archetype<Tile, Tile.Type>, IPortableArchetype {
 
       #region Archetype Config
 
@@ -59,9 +59,9 @@ namespace Overworld.Data {
       /// <summary>
       /// The tile height
       /// </summary>
-      public virtual float DefaultHeight {
+      public virtual float? DefaultHeight {
         get;
-      } = 0;
+      }
 
       /// <summary>
       /// The tile height
@@ -82,8 +82,10 @@ namespace Overworld.Data {
       /// If this tile archetype should link itself to a tile when used to make that tile in the world
       /// If you don't want this archetype set as the tile's 'type' then set this to false.
       /// </summary>
-      public virtual bool LinkArchetypeToTileDataOnSet
-        => true;
+      public virtual bool LinkArchetypeToTileDataOnSet {
+        get;
+        internal set;
+      } = true;
 
       /// <summary>
       /// Used to make new tiles via import.

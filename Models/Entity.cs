@@ -3,7 +3,14 @@ using System.Collections.Generic;
 
 namespace Overworld.Data {
 
-  public partial class Entity : Model<Entity, Entity.Type>, IUnique {
+  /// <summary>
+  /// An in game thing that can move around.
+  /// </summary>
+  public partial class Entity 
+    : Model<Entity, Entity.Type>.WithComponents,
+    IUnique,
+    IWriteableComponentStorage 
+  {
 
     static Dictionary<string, int> _entityUsedNames
       = new Dictionary<string, int>();
