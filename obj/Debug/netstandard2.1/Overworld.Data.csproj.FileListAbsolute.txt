@@ -6,7 +6,6 @@ C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.D
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Overworld.Data.deps.json
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Overworld.Data.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Overworld.Data.pdb
-C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.AnimationModule.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.CoreModule.dll
@@ -67,8 +66,6 @@ C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.D
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.XRModule.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.ARModule.dll
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.InputModule.dll
-C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.pdb
-C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.ECSBAM.xml
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.xml
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.AnimationModule.xml
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEngine.CoreModule.xml
@@ -165,3 +162,6 @@ C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.D
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\UnityEditor.UIElementsSamplesModule.xml
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Overworld.Data.xml
 C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\obj\Debug\netstandard2.1\Overworld.Data.xml
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.Data.dll
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.Data.pdb
+C:\Users\super\Projects\meep-tech\libraries\c-sharp\_games\Overworld\Overworld.Data\bin\Debug\netstandard2.1\Meep.Tech.Data.xml

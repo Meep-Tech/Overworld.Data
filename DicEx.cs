@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-public static class DicEx {
+public static partial class DictionaryExtensions {
 
   /// <summary>
   /// Add an item to a ICollection within a dictionary at the given key

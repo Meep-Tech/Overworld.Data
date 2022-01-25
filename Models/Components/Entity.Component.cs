@@ -29,21 +29,40 @@ namespace Overworld.Data {
     /// <typeparam name="TEntityComponentBaseType">Only one component of each base type can be added to a model.</typeparam>
     public abstract partial class Component<TEntityComponentBaseType>
       : Component,
-      IModel.IComponent<Entity.Component<TEntityComponentBaseType>>
+        IModel.IComponent<TEntityComponentBaseType>
+        where TEntityComponentBaseType : Component<TEntityComponentBaseType> 
     {
 
       /// <summary>
       /// If this component is enabled.
+      /// Also used to enable and disable.
       /// </summary>
       public bool IsEnabled {
-        get;
-        set;
-      }
+        get => _isEnabled;
+        set {
+          _isEnabled = value;
+          if(_isEnabled) {
+            OnEnabled();
+          } else {
+            OnDisabled();
+          }
+        }
+      } bool _isEnabled;
 
       /// <summary>
       /// For making a new type of component.
       /// </summary>
       protected Component() {}
+
+      /// <summary>
+      /// Callback for on-deacivated/disabled
+      /// </summary>
+      protected virtual void OnDisabled() {}
+
+      /// <summary>
+      /// Callback for on-acivated/enabled
+      /// </summary>
+      protected virtual void OnEnabled() {}
 
       /// <summary>
       /// Update from a ux.

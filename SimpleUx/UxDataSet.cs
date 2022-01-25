@@ -32,7 +32,7 @@ namespace Overworld.Ux.Simple {
       ArrayList rowValues = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxPannel, bool> enable = null,
+      Func<UxDataField, UxPannel, bool> enable = null,
       Func<int, object, bool> validation = null
     ) : base(
       UxDataSet.DisplayType.FieldList,

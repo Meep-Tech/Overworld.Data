@@ -50,16 +50,46 @@ namespace Overworld.Ux.Simple {
       => BuildDefaultField(prop.PropertyType, prop);
 
     static UxDataField BuildDefaultField(System.Type fieldType, MemberInfo fieldInfo = null, string fieldNameOverride = null) {
-      bool isNumeric = false;
+      // get relevant attributes:
       TooltipAttribute tooltip = fieldInfo?.GetCustomAttribute<TooltipAttribute>();
       SelectableAttribute selectableData = fieldInfo?.GetCustomAttribute<SelectableAttribute>();
       DefaultValueAttribute defaultValue = fieldInfo?.GetCustomAttribute<DefaultValueAttribute>();
+      ValidationAttribute validationAttribute = fieldInfo?.GetCustomAttribute<ValidationAttribute>();
+      EnableIfAttribute enabledAttribute = fieldInfo?.GetCustomAttribute<EnableIfAttribute>();
 
       string name = fieldNameOverride ?? null;
       UxDataField.DisplayType? type = null;
-      object validation = null;
+      object validation = validationAttribute?._validation ?? null;
       string tooltipText = tooltip?._text;
       object defaultFieldValue = null;
+      Func<UxDataField, UxPannel, bool> enabled = null;
+
+      // Check if the validation points to a local method of some kind
+      if(validation is not null && validation is string validationFunctionName) {
+        validation = fieldInfo.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(method => method.Name == validationFunctionName)
+          .Where(method => method.GetParameters().Length == 1)
+          .Where(method => method.ReturnType == typeof(bool)).FirstOrDefault() ?? validation;
+      }
+
+      // check the is enabled functionality
+      if(enabledAttribute is not null) {
+        if(fieldInfo.DeclaringType.GetProperty(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is PropertyInfo property) {
+          if(property.PropertyType != typeof(bool)) {
+            enabled = (uxField, uxPannel) => (bool)property.GetValue(uxField);
+          } else if(property.PropertyType != typeof(Func<UxDataField, UxPannel, bool>)) {
+            enabled = (uxField, uxPannel) => ((Func<UxDataField, UxPannel, bool>)property.GetValue(uxField)).Invoke(uxField, uxPannel);
+          } else
+            throw new NotSupportedException($"Cannot use the field {property.Name} as an isEnabled determination field for simple ux.");
+        } else if(fieldInfo.DeclaringType.GetField(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is FieldInfo field) {
+          if(field.FieldType != typeof(bool)) {
+            enabled = (uxField, uxPannel) => (bool)field.GetValue(uxField);
+          } else if(field.FieldType != typeof(Func<UxDataField, UxPannel, bool>)) {
+            enabled = (uxField, uxPannel) => ((Func<UxDataField, UxPannel, bool>)field.GetValue(uxField)).Invoke(uxField, uxPannel);
+          } else
+            throw new NotSupportedException($"Cannot use the field {field.Name} as an isEnabled determination field for simple ux.");
+        } else
+          throw new NotSupportedException($"Cannot use the field {enabledAttribute?._validationFieldName ?? "NULL"} as an isEnabled determination field for simple ux.");
+      }
 
       /// Seletctable dropdown fields
       if(selectableData is not null || fieldType.IsEnum) {
@@ -87,7 +117,6 @@ namespace Overworld.Ux.Simple {
             validation = (Func<object, bool>)(value => double.TryParse(value as string, out _));
         }
 
-        isNumeric = true;
         defaultFieldValue = 0;
       }//String
       else if(fieldType == typeof(string)) {
@@ -121,7 +150,8 @@ namespace Overworld.Ux.Simple {
           name: fieldInfo?.Name,
           extraEntryValidation: validation as Func<KeyValuePair<string, object>, bool>,
           tooltip: tooltip?._text,
-          rows: @default
+          rows: @default,
+          enable: enabled
         );
       } else if(fieldType == typeof(Overworld.Data.Executeable)) {
         // TODO: throw new NotImplementedException($"Executables not yet implimented");
@@ -131,7 +161,7 @@ namespace Overworld.Ux.Simple {
         // TODO: throw new NotImplementedException($"Collections not yet implimented");
       }
 
-      ///No match found
+      /// No match found
       if(!type.HasValue) {
         return null;
       }
@@ -141,7 +171,8 @@ namespace Overworld.Ux.Simple {
         type: type.Value,
         validation: validation,
         tooltip: tooltipText,
-        value: defaultFieldValue ?? defaultValue?.Value ?? null
+        value: defaultFieldValue ?? defaultValue?.Value ?? null,
+        enable: enabled
       );
     }
 

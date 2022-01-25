@@ -11,9 +11,20 @@ namespace Overworld.Data {
     public abstract partial class Component<TEntityComponentBaseType> {
 
       /// <summary>
+      ///  on init, set the builder factory for each subtype:
+      /// </summary>
+      static Component() {
+        Components<TEntityComponentBaseType>.BuilderFactory
+          = new Type() {
+            ModelBaseType = typeof(TEntityComponentBaseType)
+          };
+      }
+
+      /// <summary>
       /// There can only be one component per type attached to an entity.
       /// </summary>
-      public class Type : IComponent<Component<TEntityComponentBaseType>>.BuilderFactory, IType {
+      [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
+      public class Type : IComponent<TEntityComponentBaseType>.BuilderFactory, IType {
         UxView _compiledEditorUx;
         Dictionary<string, MemberInfo> _autoUxMembers;
 
@@ -33,7 +44,9 @@ namespace Overworld.Data {
           internal set;
         } = (builder, componentArchetype) => {
           System.Type ComponentBase = typeof(TEntityComponentBaseType);
-          foreach(MemberInfo member in ComponentBase.GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
+          foreach(MemberInfo member in ComponentBase.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Cast<MemberInfo>().Concat(ComponentBase.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+          ) {
             // ignore attribute
             if(member.GetCustomAttribute<Entites.Components.IgnoreInOverworldEditorAttribute>() != null) {
               continue;
@@ -54,7 +67,7 @@ namespace Overworld.Data {
               if(builtField is not null) {
                 builder.AddField(builtField);
               }
-            } else throw new NotSupportedException(member.GetType().FullName);
+            }
           }
 
           return builder;
@@ -65,6 +78,9 @@ namespace Overworld.Data {
         /// </summary>
         public UxDataField BuildDefaultUxField(FieldInfo field, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
           UxDataField builtField = UxViewBuilder.BuildDefaultField(field);
+          if(field is null) {
+            return null;
+          }
           if(includeAttribute is not null) {
             if(includeAttribute.IsReadOnly) {
               builtField.IsReadOnly = true;
@@ -79,9 +95,13 @@ namespace Overworld.Data {
         /// </summary>
         public UxDataField BuildDefaulUxtField(PropertyInfo prop, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
           UxDataField field = UxViewBuilder.BuildDefaultField(prop);
+          if(field is null) {
+            return null;
+          }
+
           if(includeAttribute is not null) {
             field.IsReadOnly = prop.CanWrite && !includeAttribute.IsReadOnly;
-          } else
+          } else if (field is not null)
             field.IsReadOnly = prop.CanWrite && prop.SetMethod.IsPublic;
 
           return field;

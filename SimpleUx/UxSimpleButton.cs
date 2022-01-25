@@ -11,15 +11,14 @@ namespace Overworld.Ux.Simple {
     /// Make a clickable UI button that does something on click.
     /// </summary>
     public UxSimpleButton(
-      DisplayType type,
       string name,
       Overworld.Data.Executeable onClick,
       string tooltip = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxPannel, bool> enable = null
+      Func<UxDataField, UxPannel, bool> enable = null
     ) : base(
-      type,
+      DisplayType.Button,
       name,
       tooltip,
       onClick, 

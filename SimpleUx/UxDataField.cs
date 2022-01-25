@@ -84,7 +84,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Used to determine if the field should be enabled.
     /// </summary>
-    public Func<UxPannel, bool> Enable {
+    public Func<UxDataField, UxPannel, bool> Enable {
       get;
     }
 
@@ -97,7 +97,7 @@ namespace Overworld.Ux.Simple {
     /// <param name="value">default/current value of the field</param>
     /// <param name="dataKey">Used to get the value of this field from the view</param>
     /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
-    /// <param name="enable">A function to determine if this field should be enabled currently or not</param>
+    /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
     /// <param name="validation">USed differently for different fields to validate data. Can be overriden with a null, or a Func(object Value)</param>
     public UxDataField(
       DisplayType type,
@@ -106,7 +106,7 @@ namespace Overworld.Ux.Simple {
       object value = null,
       string dataKey = null, 
       bool isReadOnly = false,
-      Func<UxPannel, bool> enable = null,
+      Func<UxDataField, UxPannel, bool> enable = null,
       object validation = null
     ) {
       Type = type;
@@ -117,7 +117,7 @@ namespace Overworld.Ux.Simple {
         ? name
         : dataKey;
       IsReadOnly = isReadOnly;
-      Enable = enable ?? (_ => true);
+      Enable = enable ?? ((_, _) => true);
       Validation = validation;
     }
 
