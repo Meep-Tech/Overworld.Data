@@ -5,6 +5,14 @@
   public class UxTitle : IUxViewElement {
 
     /// <summary>
+    /// The view this title is in.
+    /// </summary>
+    public UxView View {
+      get;
+      internal set;
+    }
+
+    /// <summary>
     /// Title Size
     /// </summary>
     public enum FontSize {
@@ -40,10 +48,12 @@
     }
 
     ///<summary><inheritdoc/></summary>
-    public UxTitle Copy()
-      => new(Text, Tooltip, Size);
+    public UxTitle Copy(UxView toNewView = null)
+      => new(Text, Tooltip, Size) {
+        View = toNewView
+      };
 
-    IUxViewElement IUxViewElement.Copy()
+    IUxViewElement IUxViewElement.Copy(UxView toNewView)
       => Copy();
   }
 }

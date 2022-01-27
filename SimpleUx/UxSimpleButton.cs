@@ -16,7 +16,7 @@ namespace Overworld.Ux.Simple {
       string tooltip = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxDataField, UxPannel, bool> enable = null
+      Func<UxDataField, UxView, bool> enable = null
     ) : base(
       DisplayType.Button,
       name,

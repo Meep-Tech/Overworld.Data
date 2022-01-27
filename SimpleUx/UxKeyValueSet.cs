@@ -21,7 +21,7 @@ namespace Overworld.Ux.Simple {
       IEnumerable<Attribute> childFieldAttributes = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxDataField, UxPannel, bool> enable = null,
+      Func<UxDataField, UxView, bool> enable = null,
       Func<KeyValuePair<string, object>, bool> extraEntryValidation = null
     ) : base(
       DisplayType.KeyValueFieldList,

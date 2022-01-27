@@ -11,6 +11,15 @@ namespace Overworld.Ux.Simple {
   /// Columns cannot contain other columns, but Columns can contain rows.
   /// </summary>
   public class UxColumn : IUxViewElement, IEnumerable<IUxViewElement> {
+
+    /// <summary>
+    /// The view this field is in.
+    /// </summary>
+    public UxView View {
+      get;
+      internal set;
+    }
+
     List<IUxViewElement> _elements;
 
     /// <summary>
@@ -44,11 +53,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Copy this column and it's contents
     /// </summary>
-    public UxColumn Copy() 
-      => new UxColumn(_elements.Select(element => element.Copy()), Title);
+    public UxColumn Copy(UxView toNewView = null) 
+      => new UxColumn(_elements.Select(element => element.Copy(toNewView)), Title);
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy()
-      => Copy();
+    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+      => Copy(toNewView);
   }
 }

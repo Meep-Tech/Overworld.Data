@@ -6,8 +6,16 @@
   public interface IUxViewElement {
 
     /// <summary>
-    /// Make a copy of the element and it's state.
+    /// The view this element is in.
     /// </summary>
-    IUxViewElement Copy();
+    UxView View {
+      get;
+    }
+
+    /// <summary>
+    /// Make a copy of the element and it's state.
+    /// Provide the new view if there is one, if not, it will be set on setting in the builder.
+    /// </summary>
+    IUxViewElement Copy(UxView toNewView = null);
   }
 }

@@ -7,7 +7,14 @@ namespace Overworld.Ux.Simple {
   /// A data field for input or display in a simple ux pannel/view
   /// </summary>
   public class UxDataField : IUxViewElement {
-    internal UxDataField _controllerField;
+
+    /// <summary>
+    /// The view this field is in.
+    /// </summary>
+    public UxView View {
+      get;
+      internal set;
+    }
 
     /// <summary>
     /// The type of displays available for simple ux data types.
@@ -35,7 +42,7 @@ namespace Overworld.Ux.Simple {
 
     /// <summary>
     /// Used differently for different kinds of fields.
-    /// Can also be replaced with a Func[Value: obj] to override default behaviours
+    /// Can also be replaced with a Func that takes the current value as an object and returns a bool, or (bool success, string message) tuple to override default behaviours
     /// </summary>
     public object Validation {
       get;
@@ -84,9 +91,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Used to determine if the field should be enabled.
     /// </summary>
-    public Func<UxDataField, UxPannel, bool> Enable {
+    public Func<UxDataField, UxView, bool> Enable {
       get;
     }
+
+    internal UxDataField _controllerField;
 
     /// <summary>
     /// Make a new data field for a Simple Ux.
@@ -106,7 +115,7 @@ namespace Overworld.Ux.Simple {
       object value = null,
       string dataKey = null, 
       bool isReadOnly = false,
-      Func<UxDataField, UxPannel, bool> enable = null,
+      Func<UxDataField, UxView, bool> enable = null,
       object validation = null
     ) {
       Type = type;
@@ -123,7 +132,8 @@ namespace Overworld.Ux.Simple {
 
     /// <summary>
     /// Try to update the field value to a new one.
-    /// Checks validations.
+    /// Checks validations and returns an error message if there is one.
+    /// </summary>
     public bool TryToSetValue(object value, out string message) {
       message = "Set Successfully";
       switch(Type) {
@@ -174,6 +184,13 @@ namespace Overworld.Ux.Simple {
           return false;
         }
       }
+      if(Validation is Func<object, (bool success, string message)> validateWithMessage) {
+        var validation = validateWithMessage(value);
+        if(!validation.success) {
+          message = validation.message;
+          return false;
+        }
+      }
 
       Value = value;
       return true;
@@ -183,11 +200,15 @@ namespace Overworld.Ux.Simple {
     /// Memberwise clone to copy
     /// </summary>
     /// <returns></returns>
-    public UxDataField Copy() 
-      => MemberwiseClone() as UxDataField;
+    public UxDataField Copy(UxView toNewView = null) {
+      var newField = MemberwiseClone() as UxDataField;
+      newField.View = toNewView;
+
+      return newField;
+    }
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy()
-      => Copy();
+    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+      => Copy(toNewView);
   }
 }

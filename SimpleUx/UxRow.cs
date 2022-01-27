@@ -10,7 +10,14 @@ namespace Overworld.Ux.Simple {
   /// Can have a label.
   /// </summary>
   public class UxRow : IUxViewElement, IEnumerable<UxDataField> {
-    List<UxDataField> _elements;
+
+    /// <summary>
+    /// The view this field is in.
+    /// </summary>
+    public UxView View {
+      get;
+      internal set;
+    }
 
     /// <summary>
     /// The label for this row.
@@ -25,6 +32,8 @@ namespace Overworld.Ux.Simple {
     public virtual string LabelTooltip {
       get;
     } = null;
+
+    List<UxDataField> _elements;
 
     internal UxRow(IEnumerable<UxDataField> elements, UxTitle label) {
       _elements = elements.ToList();
@@ -46,11 +55,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Copy this row and it's contents
     /// </summary>
-    public UxRow Copy()
-      => new(_elements.Select(element => element.Copy()), Label);
+    public UxRow Copy(UxView toNewView = null)
+      => new(_elements.Select(element => element.Copy(toNewView)), Label);
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy()
-      => Copy();
+    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+      => Copy(toNewView);
   }
 }
