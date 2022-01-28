@@ -10,7 +10,9 @@ namespace Overworld.Ux.Simple {
   /// A simple ux view, with controls, and potentially with multiple pannels that contain content.
   /// </summary>
   public class UxView : IEnumerable<KeyValuePair<UxPannel.Tab, UxPannel>> {
-    internal OrderedDictionary<UxPannel.Tab, UxPannel> _pannels
+    internal OrderedDictionary<string, UxPannel> _pannels
+      = new();
+    internal OrderedDictionary<string, UxPannel.Tab> _tabs
       = new();
     internal IReadOnlyDictionary<string, UxDataField> _fields;
 
@@ -50,13 +52,13 @@ namespace Overworld.Ux.Simple {
     /// Get the pannel at the given tab
     /// </summary>
     public UxPannel GetPannel(UxPannel.Tab tab)
-      => _pannels[tab];
+      => _pannels[tab.Key];
 
     /// <summary>
     /// Get the pannel at the given tab
     /// </summary>
     public UxPannel GetPannel(string tabKey, out UxPannel.Tab tab) {
-      tab = _pannels.Keys.First(key => key.Key == tabKey);
+      tab = GetTab(tabKey);
       return GetPannel(tab);
     }
 
@@ -64,7 +66,7 @@ namespace Overworld.Ux.Simple {
     /// Get the pannel at the given tab
     /// </summary>
     public UxPannel GetPannel(int tabIndex, out UxPannel.Tab tab) {
-      tab = _pannels.Keys.Skip(tabIndex).FirstOrDefault();
+      tab = GetTab(tabIndex);
       return GetPannel(tab);
     }
 
@@ -75,13 +77,31 @@ namespace Overworld.Ux.Simple {
       => _pannels[tabIndex];
 
     /// <summary>
+    /// Get the pannel at the given tab
+    /// </summary>
+    public UxPannel.Tab GetTab(int tabIndex)
+      => _tabs[tabIndex];
+
+    /// <summary>
+    /// Get the pannel at the given tab
+    /// </summary>
+    public UxPannel.Tab GetTab(string key)
+      => _tabs[key];
+
+    /// <summary>
     /// Copy this view layout and current values.
     /// </summary>
     public UxView Copy() {
-      UxView newView = new(MainTitle);
+      OrderedDictionary<string, UxPannel> newPannelDic = new();
+      OrderedDictionary<string, UxPannel.Tab> newTabDic = new();
+      UxView newView = new(MainTitle) {
+        _pannels = newPannelDic,
+        _tabs = newTabDic
+      };
+
       // copy the layout.
-      OrderedDictionary<UxPannel.Tab, UxPannel> newPannelDic = new();
       _pannels.ForEach(pannel => newPannelDic.Add(pannel.Key, pannel.Value.Copy(newView)));
+      _tabs.ForEach(tab => newTabDic.Add(tab.Key, tab.Value.Copy(newView)));
       // find the new fields.
       Dictionary<string, UxDataField> copiedFields = new();
       _fields = newPannelDic.Values
@@ -101,7 +121,7 @@ namespace Overworld.Ux.Simple {
     /// <inheritdoc/>
     /// </summary>
     public IEnumerator<KeyValuePair<UxPannel.Tab, UxPannel>> GetEnumerator()
-      => _pannels.ToList().GetEnumerator();
+      => _pannels.Select(_pannelData => new KeyValuePair<UxPannel.Tab, UxPannel>(_tabs[_pannelData.Key], _pannelData.Value)).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
       => GetEnumerator();

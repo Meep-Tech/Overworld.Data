@@ -84,7 +84,7 @@ namespace Overworld.Data.Entities.Components {
     /// Returns:
     /// extra weight to add.
     /// </param>    
-    public readonly DelegateCollection<Func<float, float, float>> 
+    public readonly DelegateCollection<Func<float, float, float>>
       OnWeightChangeFuncs
         = new();
 
@@ -96,7 +96,9 @@ namespace Overworld.Data.Entities.Components {
     /// Returns:
     /// extra height 
     public readonly DelegateCollection<Func<float, float, float>>
-      OnHeightChangeFuncs 
+      OnHeightChangeFuncs
         = new();
+
+    BasicPhysicalStats() {}
   }
 }

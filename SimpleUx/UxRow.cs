@@ -36,7 +36,11 @@ namespace Overworld.Ux.Simple {
     List<UxDataField> _elements;
 
     internal UxRow(IEnumerable<UxDataField> elements, UxTitle label) {
-      _elements = elements.ToList();
+      _elements = elements.Select(e =>
+        e is not UxKeyValueSet 
+          ? e 
+          : throw new System.ArgumentException($"Cannot add a key value list to a simple Ux Row.")
+      ).ToList();
       Label = label;
     }
 

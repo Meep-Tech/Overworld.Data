@@ -342,7 +342,12 @@ namespace Overworld.Ux.Simple {
     /// Build and return the view.
     /// </summary>
     public UxView Build() {
-      _view._pannels = _compiledPannels;
+      _view._tabs = new(); 
+      _view._pannels = new();
+      foreach((UxPannel.Tab tab, UxPannel pannel) in _compiledPannels) {
+        _view._tabs.Add(tab.Key, tab);
+        _view._pannels.Add(tab.Key, pannel);
+      }
       _view._fields = _fieldsByKey;
 
       return _view;

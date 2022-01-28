@@ -1551,6 +1551,16 @@
             Get the pannel at the given tab
             </summary>
         </member>
+        <member name="M:Overworld.Ux.Simple.UxView.GetTab(System.Int32)">
+            <summary>
+            Get the pannel at the given tab
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.UxView.GetTab(System.String)">
+            <summary>
+            Get the pannel at the given tab
+            </summary>
+        </member>
         <member name="M:Overworld.Ux.Simple.UxView.Copy">
             <summary>
             Copy this view layout and current values.
