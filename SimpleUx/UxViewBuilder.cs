@@ -280,7 +280,9 @@ namespace Overworld.Ux.Simple {
     /// Starts a new column. Label is optional.
     /// </summary>
     public UxViewBuilder StartNewColumn(UxTitle label = null) {
-      _buildColumn();
+      if(_currentColumnEntries is not null) {
+        _buildColumn();
+      }
       CurrentColumnLabel = label;
       _currentColumnEntries = new();
 
@@ -290,12 +292,18 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Adds a whole pre-built pannel after the current one (or first if this is starting).
     /// </summary>
-    public UxViewBuilder AddPannel(UxPannel.Tab tabData) {
+    public UxViewBuilder AddPannel(UxPannel.Tab tabData, UxPannel pannel) {
       // if theres pending entries in a column, build them
-      if(_currentColumnEntries is not null && _currentColumnEntries.Any()) {
+      if(_currentColumnEntries is not null) {
         _buildColumn();
       }
 
+      if(_currentPannelColumns is not null) {
+        _buildPannel();
+      }
+
+      _compiledPannels.Add(tabData, pannel);
+      StartNewPannel(CurrentPannelTab);
 
       return this;
     }
@@ -305,7 +313,9 @@ namespace Overworld.Ux.Simple {
     /// If this isn't called first, everuthing before is put in a default pannel has the main tilte's name.
     /// </summary>
     public UxViewBuilder StartNewPannel(UxPannel.Tab tabData) {
-      _compiledPannels.Add(CurrentPannelTab, _buildPannel());
+      if(_currentPannelColumns is not null) {
+        _buildPannel();
+      }
       _colCount = 0;
       CurrentPannelTab = tabData;
       _currentPannelColumns = new();
@@ -342,6 +352,15 @@ namespace Overworld.Ux.Simple {
     /// Build and return the view.
     /// </summary>
     public UxView Build() {
+      /// finish building:
+      if(_currentColumnEntries is not null) {
+        _buildColumn();
+      }
+      if(_currentPannelColumns is not null) {
+        _buildPannel();
+      }
+
+      /// collect and apply data
       _view._tabs = new(); 
       _view._pannels = new();
       foreach((UxPannel.Tab tab, UxPannel pannel) in _compiledPannels) {
@@ -364,13 +383,13 @@ namespace Overworld.Ux.Simple {
 
       // can't add pannels to pannels
       if(element is UxPannel) {
-        throw new System.ArgumentException($"Cannot add a pannel to a pannel. You can add pannels to views using the addnextpannel function of the builder");
+        throw new System.ArgumentException($"Cannot add a SimpleUx Pannel to another Pannel. You can add pannels to views using the addnextpannel function of the builder");
       }
 
       // for columns
       if(element is UxColumn column) {
         if(_currentPannelColumns.Count >= 3) {
-          throw new System.Exception($"Simple UX Pannel cannot have more than 3 rows.");
+          throw new System.Exception($"A Simple UX Pannel cannot have more than 3 Columns.");
         }
         // if theres pending entries in a column, build them
         if(_currentColumnEntries is not null && _currentColumnEntries.Any()) {
@@ -384,7 +403,6 @@ namespace Overworld.Ux.Simple {
       if(_currentColumnEntries is null) {
         StartNewColumn();
       }
-      _currentColumnEntries.Add(element);
 
       /// add all the sub entries of the key value set and link them:
       if(element is UxKeyValueSet keyValueSet) {
@@ -394,37 +412,48 @@ namespace Overworld.Ux.Simple {
           field._controllerField = keyValueSet;
           _currentColumnEntries.Add(field);
         }
-      }
+      } else
+        _currentColumnEntries.Add(element);
+
       return this;
     }
 
     UxColumn _buildColumn() {
-      _fieldsByKey = _fieldsByKey
-        .Merge(_currentColumnEntries._getExpandedFieldsByKey());
+      try {
+        _fieldsByKey = _fieldsByKey
+          .Merge(_currentColumnEntries._getExpandedFieldsByKey());
 
-      UxColumn col = new(_currentColumnEntries, CurrentColumnLabel) {
-        View = _view
-      };
+        UxColumn col = new(_currentColumnEntries, CurrentColumnLabel) {
+          View = _view
+        };
 
-      _currentColumnEntries = null;
-      CurrentColumnLabel = null;
+        _currentColumnEntries = null;
+        CurrentColumnLabel = null;
 
-      return col;
+        _currentPannelColumns.Add(col);
+        return col;
+      } catch(Exception e) {
+        throw new ArgumentException($"Failed to build SimpleUx Column #{_currentPannelColumns?.Count.ToString() ?? "null!"} on Pannel with key{_currentPannelTab?.Key ?? "null!"}:\n {e}", e.InnerException);
+      }
     }
 
     UxPannel _buildPannel() {
-      if(_currentColumnEntries.Any()) {
-        _buildColumn();
+      try {
+        if(_currentColumnEntries?.Any() ?? false) {
+          _buildColumn();
+        }
+
+        UxPannel pannel = new(_currentPannelColumns, CurrentPannelTab) {
+          View = _view
+        };
+
+        _compiledPannels.Add(pannel.Key, pannel);
+        _currentPannelColumns = null;
+        _currentPannelTab = null;
+        return pannel;
+      } catch (Exception e) {
+        throw new ArgumentException($"Failed to build SimpleUx Pannel with key: {_currentPannelTab?.Key ?? "null!"}:\n {e}", e.InnerException);
       }
-
-      UxPannel pannel = new(_currentPannelColumns, CurrentPannelTab) {
-        View = _view
-      };
-
-      _currentPannelColumns = null;
-      _currentPannelTab = null;
-
-      return pannel;
     }
   }
 
@@ -432,14 +461,16 @@ namespace Overworld.Ux.Simple {
     internal static Dictionary<string, UxDataField> _getExpandedFieldsByKey(this IEnumerable<IUxViewElement> elements)
       => elements.SelectMany((IUxViewElement entry)
           => entry is UxColumn column
-            ? column.SelectMany(entry =>
-              entry is UxRow row
-                ? row
-                : (IEnumerable<UxDataField>)(new[] { entry }))
-            : entry is UxRow row
-              ? row
-              : (IEnumerable<UxDataField>)(new[] { entry }
-          )
+            ? column.SelectMany(_getExpandedFieldsByKey)
+            : entry._getExpandedFieldsByKey()
         ).ToDictionary(entry => entry.DataKey);
+
+    static IEnumerable<UxDataField> _getExpandedFieldsByKey(this IUxViewElement entry) {
+      return entry is UxRow row
+        ? row
+        : entry is UxDataField field
+          ? new[] { field }
+          : Enumerable.Empty<UxDataField>();
+    }
   }
 }

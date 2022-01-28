@@ -60,6 +60,11 @@
           View = toNewView
         };
 
+      ///<summary><inheritdoc/></summary>
+      public override int GetHashCode() {
+        return Key.GetHashCode();
+      }
+
       IUxViewElement IUxViewElement.Copy(UxView toNewView)
         => Copy(toNewView);
     }
