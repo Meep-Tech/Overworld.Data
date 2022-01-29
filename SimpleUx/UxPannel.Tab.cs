@@ -34,19 +34,22 @@
       public readonly string Name;
 
       /// <summary>
+      /// Optional tab tooltip
+      /// </summary>
+      public readonly string Tooltip;
+
+      /// <summary>
       /// If you want an icon, an can be placed in your mod package containing this Ux Pannel, and the url after mods/$PackageName$/ should go here.
       /// </summary>
       public readonly string ImageLocationWithinModPackageFolder;
 
       /// <summary>
-      /// Make a new set of tab data
+      /// Make a new tab for a pannel
       /// </summary>
-      /// <param name="name"></param>
-      /// <param name="key"></param>
-      /// <param name="imageLocationWithinModPackageFolder"></param>
-      public Tab(string name, string key = null, string imageLocationWithinModPackageFolder = null) {
+      public Tab(string name, string key = null, string tooltip = null, string imageLocationWithinModPackageFolder = null) {
         Name = name;
         Key = key ?? name;
+        Tooltip = tooltip;
         ImageLocationWithinModPackageFolder = imageLocationWithinModPackageFolder;
         View = null;
         Pannel = null;
@@ -56,7 +59,7 @@
       /// Copy this tab.
       /// </summary>
       public Tab Copy(UxView toNewView = null)
-        => new(Name, Key, ImageLocationWithinModPackageFolder) {
+        => new(Name, Key, Tooltip, ImageLocationWithinModPackageFolder) {
           View = toNewView
         };
 

@@ -1428,18 +1428,20 @@
             Tab display name
             </summary>
         </member>
+        <member name="F:Overworld.Ux.Simple.UxPannel.Tab.Tooltip">
+            <summary>
+            Optional tab tooltip
+            </summary>
+        </member>
         <member name="F:Overworld.Ux.Simple.UxPannel.Tab.ImageLocationWithinModPackageFolder">
             <summary>
             If you want an icon, an can be placed in your mod package containing this Ux Pannel, and the url after mods/$PackageName$/ should go here.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.UxPannel.Tab.#ctor(System.String,System.String,System.String)">
+        <member name="M:Overworld.Ux.Simple.UxPannel.Tab.#ctor(System.String,System.String,System.String,System.String)">
             <summary>
-            Make a new set of tab data
+            Make a new tab for a pannel
             </summary>
-            <param name="name"></param>
-            <param name="key"></param>
-            <param name="imageLocationWithinModPackageFolder"></param>
         </member>
         <member name="M:Overworld.Ux.Simple.UxPannel.Tab.Copy(Overworld.Ux.Simple.UxView)">
             <summary>
@@ -1532,7 +1534,7 @@
             The title size
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.UxTitle.#ctor(System.String,System.String,Overworld.Ux.Simple.UxTitle.FontSize)">
+        <member name="M:Overworld.Ux.Simple.UxTitle.#ctor(System.String,System.String)">
             <summary>
             Make a title for a UX.
             </summary>

@@ -36,21 +36,23 @@
     /// </summary>
     public FontSize Size {
       get;
+      private set;
     }
 
     /// <summary>
     /// Make a title for a UX.
     /// </summary>
-    UxTitle(string label, string labelTooltip = null, FontSize size = FontSize.Medium) {
-      Size = size;
+    public UxTitle(string label, string labelTooltip = null) {
+      Size = FontSize.Medium;
       Tooltip = labelTooltip;
       Text = label;
     }
 
     ///<summary><inheritdoc/></summary>
     public UxTitle Copy(UxView toNewView = null)
-      => new(Text, Tooltip, Size) {
-        View = toNewView
+      => new(Text, Tooltip) {
+        View = toNewView,
+        Size = Size
       };
 
     IUxViewElement IUxViewElement.Copy(UxView toNewView)
