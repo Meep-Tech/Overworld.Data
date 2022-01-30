@@ -25,8 +25,8 @@ namespace Overworld.Data {
       /// </summary>
       [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
       public class Type : IComponent<TEntityComponentBaseType>.BuilderFactory, IType {
-        UxView _compiledEditorUx;
-        Dictionary<string, MemberInfo> _autoUxMembers;
+        View _compiledEditorUx;
+        Dictionary<string, MemberInfo> _autoMembers;
 
         /// <summary>
         /// The display name of this component.
@@ -39,7 +39,7 @@ namespace Overworld.Data {
         /// <summary>
         /// The display name of this component.
         /// </summary>
-        public Func<UxViewBuilder, Type, UxViewBuilder> BuildEditorUx {
+        public Func<ViewBuilder, Type, ViewBuilder> BuildEditorUx {
           get;
           internal set;
         } = (builder, componentArchetype) => {
@@ -56,14 +56,14 @@ namespace Overworld.Data {
             Entites.Components.ShowInOverworldEditorAttribute includeAttribute
               = member.GetCustomAttribute<Entites.Components.ShowInOverworldEditorAttribute>();
             if(member is FieldInfo field && (field.IsPublic || includeAttribute is not null)) {
-              UxDataField builtField 
-                = componentArchetype.BuildDefaultUxField(field, includeAttribute);
+              DataField builtField 
+                = componentArchetype.BuildDefaultField(field, includeAttribute);
               if(builtField is not null) {
                 builder.AddField(builtField);
               }
             } else if(member is PropertyInfo prop && (prop.GetMethod.IsPublic || includeAttribute is not null)) {
-              UxDataField builtField 
-                =componentArchetype.BuildDefaulUxtField(prop, includeAttribute);
+              DataField builtField 
+                =componentArchetype.BuildDefaultField(prop, includeAttribute);
               if(builtField is not null) {
                 builder.AddField(builtField);
               }
@@ -76,8 +76,8 @@ namespace Overworld.Data {
         /// <summary>
         /// Build a default Ux field for an entity component using the field
         /// </summary>
-        public UxDataField BuildDefaultUxField(FieldInfo field, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
-          UxDataField builtField = UxViewBuilder.BuildDefaultField(field);
+        public DataField BuildDefaultField(FieldInfo field, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
+          DataField builtField = ViewBuilder.BuildDefaultField(field);
           if(field is null) {
             return null;
           }
@@ -93,8 +93,8 @@ namespace Overworld.Data {
         /// <summary>
         /// Build a default Ux field for an entity component using the property
         /// </summary>
-        public UxDataField BuildDefaulUxtField(PropertyInfo prop, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
-          UxDataField field = UxViewBuilder.BuildDefaultField(prop);
+        public DataField BuildDefaultField(PropertyInfo prop, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
+          DataField field = ViewBuilder.BuildDefaultField(prop);
           if(field is null) {
             return null;
           }
@@ -111,9 +111,9 @@ namespace Overworld.Data {
         /// Get the base editor UX for this type of component.
         /// </summary>
         /// <returns></returns>
-        public UxView GetEmptyEditorUx()
+        public View GetEmptyEditorUx()
           => _compiledEditorUx
-            ??= BuildEditorUx(new UxViewBuilder(DisplayName), this)
+            ??= BuildEditorUx(new ViewBuilder(DisplayName), this)
                 .Build();
 
         internal Type()

@@ -14,27 +14,27 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Used to build the simple Ux
   /// </summary>
-  public class UxViewBuilder {
+  public class ViewBuilder {
     int _colCount = 0;
-    UxView _view;
-    UxPannel.Tab? _currentPannelTab;
-    OrderedDictionary<UxPannel.Tab, UxPannel> _compiledPannels = new();
-    List<UxColumn> _currentPannelColumns;
+    View _view;
+    Pannel.Tab? _currentPannelTab;
+    OrderedDictionary<Pannel.Tab, Pannel> _compiledPannels = new();
+    List<Column> _currentPannelColumns;
     List<IUxViewElement> _currentColumnEntries;
-    Dictionary<string, UxDataField> _fieldsByKey = new ();
+    Dictionary<string, DataField> _fieldsByKey = new ();
 
     /// <summary>
     /// The current panel tab this builder is working on
     /// </summary>
-    public UxPannel.Tab CurrentPannelTab {
-      get => _currentPannelTab ??= new UxPannel.Tab(_view.MainTitle) { View = _view };
+    public Pannel.Tab CurrentPannelTab {
+      get => _currentPannelTab ??= new Pannel.Tab(_view.MainTitle.Text) { View = _view };
       private set => _currentPannelTab = value;
     }
 
     /// <summary>
     /// The current panel tab this builder is working on
     /// </summary>
-    public UxTitle CurrentColumnLabel {
+    public Title CurrentColumnLabel {
       get;
       private set;
     }
@@ -42,23 +42,30 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Make a new simple Overworld Ux builder.
     /// </summary>
-    public UxViewBuilder(string mainTitle) {
+    public ViewBuilder(string mainTitle) {
+      _view = new(new(mainTitle));
+    } ViewBuilder() {}
+
+    /// <summary>
+    /// Make a new simple Overworld Ux builder.
+    /// </summary>
+    public ViewBuilder(Title mainTitle) {
       _view = new(mainTitle);
-    } UxViewBuilder() {}
+    }
 
     /// <summary>
     /// Build a default field using the field
     /// </summary>
-    public static UxDataField BuildDefaultField(FieldInfo field) 
+    public static DataField BuildDefaultField(FieldInfo field) 
       => BuildDefaultField(field.FieldType, field);
 
     /// <summary>
     /// Build a default field using the property
     /// </summary>
-    public static UxDataField BuildDefaultField(PropertyInfo prop)
+    public static DataField BuildDefaultField(PropertyInfo prop)
       => BuildDefaultField(prop.PropertyType, prop);
 
-    static UxDataField BuildDefaultField(System.Type fieldType, MemberInfo fieldInfo = null, string fieldNameOverride = null) {
+    static DataField BuildDefaultField(System.Type fieldType, MemberInfo fieldInfo = null, string fieldNameOverride = null) {
       // get relevant attributes:
       TooltipAttribute tooltip = fieldInfo?.GetCustomAttribute<TooltipAttribute>();
       SelectableAttribute selectableData = fieldInfo?.GetCustomAttribute<SelectableAttribute>();
@@ -67,11 +74,12 @@ namespace Overworld.Ux.Simple {
       EnableIfAttribute enabledAttribute = fieldInfo?.GetCustomAttribute<EnableIfAttribute>();
 
       string name = fieldNameOverride ?? null;
-      UxDataField.DisplayType? type = null;
+      DataField.DisplayType? type = null;
       object validation = validationAttribute?._validation ?? null;
       string tooltipText = tooltip?._text;
       object defaultFieldValue = null;
-      Func<UxDataField, UxView, bool> enabled = null;
+      bool isClamped = false;
+      Func<DataField, View, bool> enabled = null;
 
       // Check if the validation points to a local method of some kind that fits what we need
       if(validation is not null && validation is string validationFunctionName) {
@@ -84,16 +92,16 @@ namespace Overworld.Ux.Simple {
       if(enabledAttribute is not null) {
         if(fieldInfo.DeclaringType.GetProperty(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is PropertyInfo property) {
           if(property.PropertyType != typeof(bool)) {
-            enabled = (uxField, uxPannel) => (bool)property.GetValue(uxField);
-          } else if(property.PropertyType != typeof(Func<UxDataField, UxView, bool>)) {
-            enabled = (uxField, uxPannel) => ((Func<UxDataField, UxView, bool>)property.GetValue(uxField)).Invoke(uxField, uxPannel);
+            enabled = (Field, Pannel) => (bool)property.GetValue(Field);
+          } else if(property.PropertyType != typeof(Func<DataField, View, bool>)) {
+            enabled = (Field, Pannel) => ((Func<DataField, View, bool>)property.GetValue(Field)).Invoke(Field, Pannel);
           } else
             throw new NotSupportedException($"Cannot use the field {property.Name} as an isEnabled determination field for simple ux.");
         } else if(fieldInfo.DeclaringType.GetField(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is FieldInfo field) {
           if(field.FieldType != typeof(bool)) {
-            enabled = (uxField, uxPannel) => (bool)field.GetValue(uxField);
-          } else if(field.FieldType != typeof(Func<UxDataField, UxView, bool>)) {
-            enabled = (uxField, uxPannel) => ((Func<UxDataField, UxView, bool>)field.GetValue(uxField)).Invoke(uxField, uxPannel);
+            enabled = (Field, Pannel) => (bool)field.GetValue(Field);
+          } else if(field.FieldType != typeof(Func<DataField, View, bool>)) {
+            enabled = (Field, Pannel) => ((Func<DataField, View, bool>)field.GetValue(Field)).Invoke(Field, Pannel);
           } else
             throw new NotSupportedException($"Cannot use the field {field.Name} as an isEnabled determination field for simple ux.");
         } else
@@ -103,8 +111,8 @@ namespace Overworld.Ux.Simple {
       /// Seletctable dropdown fields
       if(selectableData is not null || fieldType.IsEnum) {
         type = (selectableData?._isMultiselect ?? false)
-          ? UxDataField.DisplayType.SelectManyDropdown
-          : UxDataField.DisplayType.SelectOneOfManyDropdown;
+          ? DataField.DisplayType.SelectManyDropdown
+          : DataField.DisplayType.SelectOneOfManyDropdown;
         validation = selectableData?._options ?? Enum.GetValues(fieldType).Cast<object>().Select(e => {
           // TODO: make this static somewhere:
           // Makes capscase into spaced words text.
@@ -114,11 +122,12 @@ namespace Overworld.Ux.Simple {
 
       /// Potential text input fields
       // Numeric:
-      if(fieldType == typeof(int) || fieldType == typeof(double) || fieldType == typeof(float)) {
+      if((isClamped = fieldType == typeof(int)) || fieldType == typeof(double) || fieldType == typeof(float)) {
         RangeSliderAttribute rangeSliderData;
         if((rangeSliderData = fieldInfo?.GetCustomAttribute<RangeSliderAttribute>()) != null) {
-          type = UxDataField.DisplayType.RangeSlider;
-          validation = (rangeSliderData._min, rangeSliderData._max);
+          type = DataField.DisplayType.RangeSlider;
+          validation = isClamped
+            ? ((int)rangeSliderData._min, (int)rangeSliderData._max) : (rangeSliderData._min, rangeSliderData._max);
         } else {
           if(fieldType == typeof(int)) {
             validation = (Func<object, bool>)(value => int.TryParse(value as string, out _));
@@ -129,21 +138,21 @@ namespace Overworld.Ux.Simple {
         defaultFieldValue = 0;
       }//String
       else if(fieldType == typeof(string)) {
-        type = UxDataField.DisplayType.Text;
+        type = DataField.DisplayType.Text;
         defaultFieldValue = "";
       } //Char
       else if(fieldType == typeof(char)) {
         validation = (Func<object, bool>)(value => ((value as string)?.Length ?? 0) <= 1);
-        type = UxDataField.DisplayType.Text;
+        type = DataField.DisplayType.Text;
         defaultFieldValue = "";
       }
       /// Boolean toggle
       else if(fieldType == typeof(bool)) {
-        type = UxDataField.DisplayType.Toggle;
+        type = DataField.DisplayType.Toggle;
         defaultFieldValue = false;
       } /// Color Selector
       else if(fieldType == typeof(Color)) {
-        type = UxDataField.DisplayType.ColorPicker;
+        type = DataField.DisplayType.ColorPicker;
         defaultFieldValue = new Color();
       } /// Key value list
       else if(typeof(IDictionary).IsAssignableFrom(fieldType) || fieldType.IsAssignableToGeneric(typeof(IReadOnlyDictionary<,>))) {
@@ -155,13 +164,7 @@ namespace Overworld.Ux.Simple {
           }
         }
 
-        return new Ux.Simple.UxKeyValueSet(
-          name: fieldInfo?.Name,
-          extraEntryValidation: validation as Func<KeyValuePair<string, object>, bool>,
-          tooltip: tooltip?._text,
-          rows: @default,
-          enable: enabled
-        );
+        defaultFieldValue = @default;
       } else if(fieldType == typeof(Overworld.Data.Executeable)) {
         // TODO: throw new NotImplementedException($"Executables not yet implimented");
       } else if(typeof(IEnumerable<Data.Executeable>).IsAssignableFrom(fieldType)) {
@@ -175,21 +178,21 @@ namespace Overworld.Ux.Simple {
         return null;
       }
 
-      return new UxDataField(
-        name: name ?? fieldInfo.Name,
+      return DataField.Make(
+        title: name ?? fieldInfo.Name,
         type: type.Value,
         validation: validation,
         tooltip: tooltipText,
         value: defaultFieldValue ?? defaultValue?.Value ?? null,
-        enable: enabled
+        enabledIf: enabled
       );
     }
 
     /// <summary>
     /// Copy this builder.
     /// </summary>
-    public UxViewBuilder Copy() {
-      UxView clone = _view.Copy();
+    public ViewBuilder Copy() {
+      View clone = _view.Copy();
       return new() {
         _view = clone,
         _currentPannelTab = _currentPannelTab?.Copy(clone),
@@ -200,9 +203,9 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// reset and empty this builder
     /// </summary>
-    public UxViewBuilder Clear(string newMainTitle = null) {
+    public ViewBuilder Clear(Title newMainTitle = null) {
       _currentPannelColumns = null;
-      _currentPannelColumns = new List<UxColumn>();
+      _currentPannelColumns = new List<Column>();
       _currentColumnEntries = new List<IUxViewElement>();
       _view = new(newMainTitle ?? _view.MainTitle);
       _currentPannelTab = null;
@@ -212,8 +215,17 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Add a data field.
     /// </summary>
-    public UxViewBuilder AddField(UxDataField field) {
+    public ViewBuilder AddField(DataField field) {
       _addElementToCurrentPannel(field);
+
+      return this;
+    }
+
+    /// <summary>
+    /// Add a header inside of a column.
+    /// </summary>
+    public ViewBuilder AddHeader(Title inColumnHeader) {
+      _addElementToCurrentPannel(inColumnHeader);
 
       return this;
     }
@@ -221,22 +233,22 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Add a formatted row of controls, inputs, or Ux items.
     /// </summary>
-    public UxViewBuilder AddRow(params UxDataField[] fieldsInRow)
-      => AddRow((IEnumerable<UxDataField>)fieldsInRow);
+    public ViewBuilder AddRow(params DataField[] fieldsInRow)
+      => AddRow((IEnumerable<DataField>)fieldsInRow);
 
     /// <summary>
     /// Add a formatted row of controls, inputs, or Ux items. Give it a label to the left:
     /// </summary>
-    public UxViewBuilder AddRow(UxTitle label, params UxDataField[] fieldsInRow)
+    public ViewBuilder AddRow(Title label, params DataField[] fieldsInRow)
       => AddRow(fieldsInRow, label);
 
     /// <summary>
     /// Add a formatted row of controls, inputs, or Ux items.
     /// You can also give it a label to the left:
     /// </summary>
-    public UxViewBuilder AddRow(IEnumerable<UxDataField> fieldsInRow, UxTitle label = null) {
+    public ViewBuilder AddRow(IEnumerable<DataField> fieldsInRow, Title label = null) {
       _addElementToCurrentPannel(
-        new UxRow(
+        new Row(
           fieldsInRow,
           label
         ) {
@@ -250,22 +262,22 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Add a formatted column of controls, inputs, or Ux items.
     /// </summary>
-    public UxViewBuilder AddColumn(params IUxViewElement[] fieldsInColumn)
+    public ViewBuilder AddColumn(params IUxViewElement[] fieldsInColumn)
       => AddColumn((IEnumerable<IUxViewElement>)fieldsInColumn);
 
     /// <summary>
     /// Add a formatted column of controls, inputs, or Ux items. Give it a label to the left:
     /// </summary>
-    public UxViewBuilder AddColumn(UxTitle label, params IUxViewElement[] fieldsInColumn)
+    public ViewBuilder AddColumn(Title label, params IUxViewElement[] fieldsInColumn)
       => AddColumn(fieldsInColumn, label);
 
     /// <summary>
     /// Add a formatted column of controls, inputs, or Ux items.
     /// You can also give it a label to the left:
     /// </summary>
-    public UxViewBuilder AddColumn(IEnumerable<IUxViewElement> fieldsInColumn, UxTitle label = null) {
+    public ViewBuilder AddColumn(IEnumerable<IUxViewElement> fieldsInColumn, Title label = null) {
       _addElementToCurrentPannel(
-        new UxColumn(
+        new Column(
           fieldsInColumn,
           label
         ) {
@@ -279,7 +291,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Starts a new column. Label is optional.
     /// </summary>
-    public UxViewBuilder StartNewColumn(UxTitle label = null) {
+    public ViewBuilder StartNewColumn(Title label = null) {
       if(_currentColumnEntries is not null) {
         _buildColumn();
       }
@@ -292,7 +304,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Adds a whole pre-built pannel after the current one (or first if this is starting).
     /// </summary>
-    public UxViewBuilder AddPannel(UxPannel.Tab tabData, UxPannel pannel) {
+    public ViewBuilder AddPannel(Pannel.Tab tabData, Pannel pannel) {
       // if theres pending entries in a column, build them
       if(_currentColumnEntries is not null) {
         _buildColumn();
@@ -312,7 +324,7 @@ namespace Overworld.Ux.Simple {
     /// Starts a new pannel with the given name.
     /// If this isn't called first, everuthing before is put in a default pannel has the main tilte's name.
     /// </summary>
-    public UxViewBuilder StartNewPannel(UxPannel.Tab tabData) {
+    public ViewBuilder StartNewPannel(Pannel.Tab tabData) {
       if(_currentPannelColumns is not null) {
         _buildPannel();
       }
@@ -327,7 +339,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Sets the current pannel tab's data if there isn't any
     /// </summary>
-    public UxViewBuilder SetCurrentPannelTab(UxPannel.Tab tabData) {
+    public ViewBuilder SetCurrentPannelTab(Pannel.Tab tabData) {
       if(_currentPannelTab is null) {
         _currentPannelTab = tabData;
       } else
@@ -339,7 +351,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Sets the current columns header if there isn't one already set
     /// </summary>
-    public UxViewBuilder SetCurrentColumnHeader(UxTitle label) {
+    public ViewBuilder SetCurrentColumnHeader(Title label) {
       if(CurrentColumnLabel is null) {
         CurrentColumnLabel = label;
       } else
@@ -351,7 +363,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Build and return the view.
     /// </summary>
-    public UxView Build() {
+    public View Build() {
       /// finish building:
       if(_currentColumnEntries is not null) {
         _buildColumn();
@@ -363,7 +375,7 @@ namespace Overworld.Ux.Simple {
       /// collect and apply data
       _view._tabs = new(); 
       _view._pannels = new();
-      foreach((UxPannel.Tab tab, UxPannel pannel) in _compiledPannels) {
+      foreach((Pannel.Tab tab, Pannel pannel) in _compiledPannels) {
         _view._tabs.Add(tab.Key, tab);
         _view._pannels.Add(tab.Key, pannel);
       }
@@ -375,19 +387,19 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Add an element like a pre-built column or row or field to the current pannel.
     /// </summary>
-    internal UxViewBuilder _addElementToCurrentPannel(IUxViewElement element) {
+    internal ViewBuilder _addElementToCurrentPannel(IUxViewElement element) {
       // start a new pannel if we don't have one.
       if(_currentPannelColumns is null) {
         StartNewPannel(CurrentPannelTab);
       }
 
       // can't add pannels to pannels
-      if(element is UxPannel) {
+      if(element is Pannel) {
         throw new System.ArgumentException($"Cannot add a SimpleUx Pannel to another Pannel. You can add pannels to views using the addnextpannel function of the builder");
       }
 
       // for columns
-      if(element is UxColumn column) {
+      if(element is Column column) {
         if(_currentPannelColumns.Count >= 3) {
           throw new System.Exception($"A Simple UX Pannel cannot have more than 3 Columns.");
         }
@@ -405,10 +417,10 @@ namespace Overworld.Ux.Simple {
       }
 
       /// add all the sub entries of the key value set and link them:
-      if(element is UxKeyValueSet keyValueSet) {
+      if(element is DataFieldKeyValueSet keyValueSet) {
         // TODO: allow people to apply certain attributes, like the range display one, to a dictionary, and it will apply to the children.
         foreach(KeyValuePair<string, object> entry in keyValueSet.Value as Dictionary<string, object>) {
-          UxDataField field = BuildDefaultField(entry.Value.GetType(), fieldNameOverride: keyValueSet.Name + ":" + entry.Key);
+          DataField field = BuildDefaultField(entry.Value.GetType(), fieldNameOverride: keyValueSet.Name + ":" + entry.Key);
           field._controllerField = keyValueSet;
           _currentColumnEntries.Add(field);
         }
@@ -418,12 +430,12 @@ namespace Overworld.Ux.Simple {
       return this;
     }
 
-    UxColumn _buildColumn() {
+    Column _buildColumn() {
       try {
         _fieldsByKey = _fieldsByKey
           .Merge(_currentColumnEntries._getExpandedFieldsByKey());
 
-        UxColumn col = new(_currentColumnEntries, CurrentColumnLabel) {
+        Column col = new(_currentColumnEntries, CurrentColumnLabel) {
           View = _view
         };
 
@@ -433,17 +445,17 @@ namespace Overworld.Ux.Simple {
         _currentPannelColumns.Add(col);
         return col;
       } catch(Exception e) {
-        throw new ArgumentException($"Failed to build SimpleUx Column #{_currentPannelColumns?.Count.ToString() ?? "null!"} on Pannel with key{_currentPannelTab?.Key ?? "null!"}:\n {e}", e.InnerException);
+        throw new ArgumentException($"Failed to build SimpleUx Column #{_currentPannelColumns?.Count.ToString() ?? "null!"} on Pannel with key: {_currentPannelTab?.Key ?? "null!"}:\n {e}", e.InnerException);
       }
     }
 
-    UxPannel _buildPannel() {
+    Pannel _buildPannel() {
       try {
         if(_currentColumnEntries?.Any() ?? false) {
           _buildColumn();
         }
 
-        UxPannel pannel = new(_currentPannelColumns, CurrentPannelTab) {
+        Pannel pannel = new(_currentPannelColumns, CurrentPannelTab) {
           View = _view
         };
 
@@ -457,20 +469,20 @@ namespace Overworld.Ux.Simple {
     }
   }
 
-  internal static class UxBuilderExtensions {
-    internal static Dictionary<string, UxDataField> _getExpandedFieldsByKey(this IEnumerable<IUxViewElement> elements)
+  internal static class BuilderExtensions {
+    internal static Dictionary<string, DataField> _getExpandedFieldsByKey(this IEnumerable<IUxViewElement> elements)
       => elements.SelectMany((IUxViewElement entry)
-          => entry is UxColumn column
+          => entry is Column column
             ? column.SelectMany(_getExpandedFieldsByKey)
             : entry._getExpandedFieldsByKey()
         ).ToDictionary(entry => entry.DataKey);
 
-    static IEnumerable<UxDataField> _getExpandedFieldsByKey(this IUxViewElement entry) {
-      return entry is UxRow row
+    static IEnumerable<DataField> _getExpandedFieldsByKey(this IUxViewElement entry) {
+      return entry is Row row
         ? row
-        : entry is UxDataField field
+        : entry is DataField field && !field.IsReadOnly
           ? new[] { field }
-          : Enumerable.Empty<UxDataField>();
+          : Enumerable.Empty<DataField>();
     }
   }
 }

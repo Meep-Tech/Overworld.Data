@@ -2,12 +2,12 @@
   /// <summary>
   /// A title that takes up it's own row, or can be added to a row or column to prefix it.
   /// </summary>
-  public class UxTitle : IUxViewElement {
+  public class Title : IUxViewElement {
 
     /// <summary>
     /// The view this title is in.
     /// </summary>
-    public UxView View {
+    public View View {
       get;
       internal set;
     }
@@ -42,20 +42,20 @@
     /// <summary>
     /// Make a title for a UX.
     /// </summary>
-    public UxTitle(string label, string labelTooltip = null) {
+    public Title(string label, string labelTooltip = null) {
       Size = FontSize.Medium;
       Tooltip = labelTooltip;
       Text = label;
     }
 
     ///<summary><inheritdoc/></summary>
-    public UxTitle Copy(UxView toNewView = null)
+    public Title Copy(View toNewView = null)
       => new(Text, Tooltip) {
         View = toNewView,
         Size = Size
       };
 
-    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+    IUxViewElement IUxViewElement.Copy(View toNewView)
       => Copy();
   }
 }

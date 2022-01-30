@@ -10,12 +10,12 @@ namespace Overworld.Ux.Simple {
   /// Columns can have labels at the top.
   /// Columns cannot contain other columns, but Columns can contain rows.
   /// </summary>
-  public class UxColumn : IUxViewElement, IEnumerable<IUxViewElement> {
+  public class Column : IUxViewElement, IEnumerable<IUxViewElement> {
 
     /// <summary>
     /// The view this field is in.
     /// </summary>
-    public UxView View {
+    public View View {
       get;
       internal set;
     }
@@ -25,15 +25,17 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// The label for this row.
     /// </summary>
-    public UxTitle Title {
+    public Title Title {
       get;
     }
 
-    internal UxColumn(IEnumerable<IUxViewElement> elements, UxTitle label) {
+    internal Column(IEnumerable<IUxViewElement> elements, Title label) {
       _elements = elements.Select(element => {
-        return element is UxColumn
+        return element is Column
           ? throw new System.Exception($"Cannot place a Simple Ux Column inside another column.")
-          : element;
+          : element is Pannel
+            ? throw new System.Exception($"Cannot add a Pannel to a Simple Ux Column")
+            : element;
       }).ToList();
       Title = label;
     }
@@ -53,11 +55,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Copy this column and it's contents
     /// </summary>
-    public UxColumn Copy(UxView toNewView = null) 
-      => new UxColumn(_elements.Select(element => element.Copy(toNewView)), Title);
+    public Column Copy(View toNewView = null) 
+      => new(_elements.Select(element => element.Copy(toNewView)), Title);
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+    IUxViewElement IUxViewElement.Copy(View toNewView)
       => Copy(toNewView);
   }
 }

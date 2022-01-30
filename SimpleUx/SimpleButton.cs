@@ -5,18 +5,18 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Represents a simple button in a ui
   /// </summary>
-  public class UxSimpleButton : UxDataField {
+  public class SimpleButton : DataField {
 
     /// <summary>
     /// Make a clickable UI button that does something on click.
     /// </summary>
-    public UxSimpleButton(
+    public SimpleButton(
       string name,
       Overworld.Data.Executeable onClick,
       string tooltip = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxDataField, UxView, bool> enable = null
+      Func<DataField, View, bool> enable = null
     ) : base(
       DisplayType.Button,
       name,

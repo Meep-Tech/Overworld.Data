@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Overworld.Ux.Simple {
@@ -7,51 +6,41 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Represents a key value set in a ui
   /// </summary>
-  public class UxDataSet : UxDataField {
-
-    /// <summary>
-    /// The type of data this set holds.
-    /// </summary>
-    public System.Type DataType {
-      get;
-    }
-
+  public class DataFieldKeyValueSet : DataField {
     internal IEnumerable<Attribute> _childFieldAttributes;
 
     /// <summary>
     /// Make a key value set to display in a ux.
     /// </summary>
-    /// <param name="dataType">The type of data the list will accept</param>
+    /// <param name="extraEntryValidation">Add validation other than the built in key validation</param>
     /// <param name="childFieldAttributes">Add attributes to each generated child input</param>
-    /// <param name="rowValues">The default/current list values</param>
-    public UxDataSet(
+    public DataFieldKeyValueSet(
       string name,
-      System.Type dataType,
-      IEnumerable<Attribute> childFieldAttributes = null,
       string tooltip = null,
-      ArrayList rowValues = null,
+      Dictionary<string, object> rows = null,
+      IEnumerable<Attribute> childFieldAttributes = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxDataField, UxView, bool> enable = null,
-      Func<int, object, bool> validation = null
+      Func<DataField, View, bool> enable = null,
+      Func<KeyValuePair<string, object>, bool> extraEntryValidation = null
     ) : base(
-      UxDataSet.DisplayType.FieldList,
+      DisplayType.KeyValueFieldList,
       name,
       tooltip,
-      rowValues, 
+      rows, 
       dataKey,
       isReadOnly,
       enable,
-      validation
+      ((KeyValuePair<string, object> value) => rows.ContainsKey(value.Key)) + (extraEntryValidation ?? ((_) => true))
     ) {
-      DataType = dataType;
       _childFieldAttributes = childFieldAttributes;
     }
 
     /// <summary>
     /// Used to update the colletction
     /// </summary>
-    internal void _update(KeyValuePair<int, object> itemAtIndex) {
+    /// <param name="pair"></param>
+    internal void _update(KeyValuePair<string, object> pair) {
       throw new NotImplementedException();
     }
 
@@ -65,7 +54,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// remove the item at the collection index
     /// </summary>
-    internal void _remove(int key) {
+    internal void _remove(string key) {
       throw new NotImplementedException();
     }
   }

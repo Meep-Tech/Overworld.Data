@@ -1,6 +1,6 @@
 ﻿namespace Overworld.Ux.Simple {
 
-  public partial class UxPannel {
+  public partial class Pannel {
 
     /// <summary>
     /// A tab used to switch between pannels of a simple ux.
@@ -10,7 +10,7 @@
       /// <summary>
       /// The view this is attached to
       /// </summary>
-      public UxView View {
+      public View View {
         get;
         internal set;
       }
@@ -18,7 +18,7 @@
       /// <summary>
       /// The pannel for this tab:
       /// </summary>
-      public UxPannel Pannel {
+      public Pannel Pannel {
         get;
         internal set;
       }
@@ -58,7 +58,7 @@
       /// <summary>
       /// Copy this tab.
       /// </summary>
-      public Tab Copy(UxView toNewView = null)
+      public Tab Copy(View toNewView = null)
         => new(Name, Key, Tooltip, ImageLocationWithinModPackageFolder) {
           View = toNewView
         };
@@ -68,7 +68,7 @@
         return Key.GetHashCode();
       }
 
-      IUxViewElement IUxViewElement.Copy(UxView toNewView)
+      IUxViewElement IUxViewElement.Copy(View toNewView)
         => Copy(toNewView);
     }
   }

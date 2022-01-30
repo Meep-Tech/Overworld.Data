@@ -9,12 +9,12 @@ namespace Overworld.Ux.Simple {
   /// Can't contain columns or other rows.
   /// Can have a label.
   /// </summary>
-  public class UxRow : IUxViewElement, IEnumerable<UxDataField> {
+  public class Row : IUxViewElement, IEnumerable<DataField> {
 
     /// <summary>
     /// The view this field is in.
     /// </summary>
-    public UxView View {
+    public View View {
       get;
       internal set;
     }
@@ -22,7 +22,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// The label for this row.
     /// </summary>
-    public UxTitle Label { 
+    public Title Label { 
       get;
     }
 
@@ -33,11 +33,11 @@ namespace Overworld.Ux.Simple {
       get;
     } = null;
 
-    List<UxDataField> _elements;
+    List<DataField> _elements;
 
-    internal UxRow(IEnumerable<UxDataField> elements, UxTitle label) {
+    internal Row(IEnumerable<DataField> elements, Title label) {
       _elements = elements.Select(e =>
-        e is not UxKeyValueSet 
+        e is not DataFieldKeyValueSet 
           ? e 
           : throw new System.ArgumentException($"Cannot add a key value list to a simple Ux Row.")
       ).ToList();
@@ -47,8 +47,8 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public IEnumerator<UxDataField> GetEnumerator() {
-      return ((IEnumerable<UxDataField>)_elements).GetEnumerator();
+    public IEnumerator<DataField> GetEnumerator() {
+      return ((IEnumerable<DataField>)_elements).GetEnumerator();
     }
 
     ///<summary><inheritdoc/></summary>
@@ -59,11 +59,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Copy this row and it's contents
     /// </summary>
-    public UxRow Copy(UxView toNewView = null)
+    public Row Copy(View toNewView = null)
       => new(_elements.Select(element => element.Copy(toNewView)), Label);
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+    IUxViewElement IUxViewElement.Copy(View toNewView)
       => Copy(toNewView);
   }
 }

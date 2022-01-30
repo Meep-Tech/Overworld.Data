@@ -7,12 +7,12 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Display data for a component.
   /// </summary>
-  public partial class UxPannel : IUxViewElement, IEnumerable<UxColumn> {
+  public partial class Pannel : IUxViewElement, IEnumerable<Column> {
 
     /// <summary>
     /// The tab data for this pannel
     /// </summary>
-    public UxPannel.Tab Key {
+    public Pannel.Tab Key {
       get;
       internal set;
     }
@@ -20,7 +20,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// The view this field is in.
     /// </summary>
-    public UxView View {
+    public View View {
       get;
       internal set;
     }
@@ -28,12 +28,12 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// The fiels in this model, by key.
     /// </summary>
-    public IReadOnlyList<UxColumn> Elements {
+    public IReadOnlyList<Column> Elements {
       get;
       private set;
     }
 
-    internal UxPannel(IList<UxColumn> orderedFields, Tab tab) {
+    internal Pannel(IList<Column> orderedFields, Tab tab) {
       Elements = orderedFields?.ToList();
       Key = tab;
       tab.Pannel = this;
@@ -42,10 +42,10 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Copy this pannels UI scheme.
     /// </summary>
-    public UxPannel Copy(UxView toNewView = null) {
-      Dictionary<string, UxDataField> copiedFields = new();
+    public Pannel Copy(View toNewView = null) {
+      Dictionary<string, DataField> copiedFields = new();
       Tab tab = Key;
-      UxPannel pannel = new(null, tab) {
+      Pannel pannel = new(null, tab) {
         Elements = Elements.Select(element => element.Copy(toNewView)).ToList(),
         View = toNewView,
       };
@@ -56,11 +56,11 @@ namespace Overworld.Ux.Simple {
     }
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+    IUxViewElement IUxViewElement.Copy(View toNewView)
       => Copy(toNewView);
 
     ///<summary><inheritdoc/></summary>
-    public IEnumerator<UxColumn> GetEnumerator()
+    public IEnumerator<Column> GetEnumerator()
       => Elements.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()

@@ -3,7 +3,7 @@
 namespace Overworld.Ux.Simple {
   /// <summary>
   /// Denotes another field that indicates when this field should be enabled.
-  /// The other field must have a boolean type and be a property of field, or the field could be a Func[UxField, UxView]
+  /// The other field must have a boolean type and be a property of field, or the field could be a Func[Field, View]
   /// </summary>
   [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
   public class EnableIfAttribute : Attribute {

@@ -4,7 +4,7 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// A boolean toggle specific Simple Ux Field.
   /// </summary>
-  public class UxToggleField : UxDataField {
+  public class ToggleField : DataField {
 
     /// <summary>
     /// Placeholder text for the input
@@ -16,13 +16,13 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public UxToggleField(
+    public ToggleField(
       string name,
       string tooltip = null, 
-      object value = null,
+      bool value = false,
       string dataKey = null,
       bool isReadOnly = false, 
-      Func<UxDataField, UxView, bool> enabledIf = null,
+      Func<DataField, View, bool> enabledIf = null,
       Func<bool, bool> validation = null
     ) : base(
       DisplayType.Toggle, 

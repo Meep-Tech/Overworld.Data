@@ -6,12 +6,12 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// A data field for input or display in a simple ux pannel/view
   /// </summary>
-  public class UxDataField : IUxViewElement {
+  public class DataField : IUxViewElement {
 
     /// <summary>
     /// The view this field is in.
     /// </summary>
-    public UxView View {
+    public View View {
       get;
       internal set;
     }
@@ -91,11 +91,11 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// Used to determine if the field should be enabled.
     /// </summary>
-    public Func<UxDataField, UxView, bool> Enable {
+    public Func<DataField, View, bool> Enable {
       get;
     }
 
-    internal UxDataField _controllerField;
+    internal DataField _controllerField;
 
     /// <summary>
     /// Make a new data field for a Simple Ux.
@@ -108,24 +108,29 @@ namespace Overworld.Ux.Simple {
     /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
     /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
     /// <param name="validation">USed differently for different fields to validate data. Can be overriden with a null, or a Func(object Value)</param>
-    public UxDataField(
+    public DataField(
       DisplayType type,
       string name,
       string tooltip = null,
       object value = null,
       string dataKey = null, 
       bool isReadOnly = false,
-      Func<UxDataField, UxView, bool> enable = null,
+      Func<DataField, View, bool> enable = null,
       object validation = null
     ) {
       Type = type;
       Name = name;
       Tooltip = tooltip;
       Value = value;
+      IsReadOnly = isReadOnly;
       DataKey = string.IsNullOrWhiteSpace(dataKey)
         ? name
         : dataKey;
-      IsReadOnly = isReadOnly;
+
+      if(!isReadOnly && DataKey is null) {
+        throw new ArgumentException($"Non-read-only fields require a data key. Provide a title, name, or datakey to the field constructor or Make function");
+      }
+
       Enable = enable ?? ((_, _) => true);
       Validation = validation;
     }
@@ -138,7 +143,7 @@ namespace Overworld.Ux.Simple {
       message = "Set Successfully";
       switch(Type) {
         case DisplayType.RangeSlider:
-          if(Validation.GetType() == typeof((float, float))) {
+          if(Validation?.GetType() == typeof((float, float))) {
             double number = (double)value;
             (double min, double max) bounds = (((float, float))Validation);
             if(number > bounds.max && number < bounds.min) {
@@ -148,14 +153,14 @@ namespace Overworld.Ux.Simple {
           }
           break;
         case DisplayType.Text:
-          if(Validation.GetType() == typeof((float, float))) {
+          if(Validation?.GetType() == typeof((float, float))) {
             double number = (double)value;
             (double min, double max) = (((float, float))Validation);
             if(number > max && number < min) {
               message = "Number Out Of Range Bounds";
               return false;
             }
-          } else if(Validation.GetType() == typeof((int, int))) {
+          } else if(Validation?.GetType() == typeof((int, int))) {
             string text = (string)value;
             (double min, double max) = (((float, float))Validation);
             if(text.Length < min || text.Length > max) {
@@ -174,7 +179,7 @@ namespace Overworld.Ux.Simple {
           return false;
         }
 
-        (_controllerField as UxKeyValueSet)._update(pair);
+        (_controllerField as DataFieldKeyValueSet)._update(pair);
       }
 
       //Default func
@@ -200,15 +205,114 @@ namespace Overworld.Ux.Simple {
     /// Memberwise clone to copy
     /// </summary>
     /// <returns></returns>
-    public UxDataField Copy(UxView toNewView = null) {
-      var newField = MemberwiseClone() as UxDataField;
+    public DataField Copy(View toNewView = null) {
+      var newField = MemberwiseClone() as DataField;
       newField.View = toNewView;
 
       return newField;
     }
 
     ///<summary><inheritdoc/></summary>
-    IUxViewElement IUxViewElement.Copy(UxView toNewView)
+    IUxViewElement IUxViewElement.Copy(View toNewView)
       => Copy(toNewView);
+
+    /// <summary>
+    /// Make a new field that fits your needs
+    /// </summary>
+    public static DataField Make(
+      DisplayType type, 
+      string title = null,
+      string tooltip = null, 
+      object value = null,
+      bool isReadOnly = false,
+      object validation = null,
+      Func<DataField, View, bool> enabledIf = null,
+      string dataKey = null
+    ) {
+      switch(type) {
+        case DisplayType.Text:
+          if(isReadOnly) {
+            return new ReadOnlyTextField(
+              title: title,
+              tooltip: tooltip,
+              text: value,
+              dataKey: dataKey
+            );
+          } else
+            return new TextField(
+              name: title,
+              validation: validation as System.Func<string, bool>,
+              tooltip: tooltip,
+              value: value,
+              enabledIf: enabledIf,
+              dataKey: dataKey
+            );
+        case DisplayType.Toggle:
+          bool boolValue = value is bool asBool
+            ? asBool
+            : float.TryParse(value.ToString(), out float parsedAsFloat) && parsedAsFloat > 0;
+          return new ToggleField(
+            name: title,
+            validation: validation as System.Func<bool, bool>,
+            tooltip: tooltip,
+            value: boolValue,
+            enabledIf: enabledIf,
+            dataKey: dataKey
+          );
+        case DisplayType.RangeSlider:
+          bool clamped = false;
+          (float min, float max)? minAndMax = null;
+          if(validation is (int clampedMin, int clampedMax)) {
+            clamped = true;
+            minAndMax = (clampedMin, clampedMax);
+          } else if(validation is (float min, float max)) {
+            minAndMax = (min, max);
+          }
+
+          float? floatValue = value is float asFloat
+            ? asFloat
+            : float.TryParse(value.ToString(), out float parsedFloat)
+             ? parsedFloat
+             : null;
+
+          return new RangeSliderField(
+            name: title,
+            min: minAndMax?.min ?? 0,
+            max: minAndMax?.max ?? 1,
+            clampedToWholeNumbers: clamped,
+            tooltip: tooltip,
+            value: floatValue,
+            enabledIf: enabledIf,
+            dataKey: dataKey
+          );
+        case DisplayType.KeyValueFieldList:
+          return new DataFieldKeyValueSet(
+            name: title,
+            rows: value as Dictionary<string, object>,
+            extraEntryValidation: validation as Func<KeyValuePair<string, object>, bool>,
+            tooltip: tooltip,
+            dataKey: dataKey,
+            isReadOnly: isReadOnly,
+            enable: enabledIf
+          );
+        case DisplayType.SelectOneOfManyDropdown:
+        case DisplayType.SelectManyDropdown:
+        case DisplayType.FieldList:
+        case DisplayType.Executeable:
+        case DisplayType.ColorPicker:
+        case DisplayType.Image:
+        case DisplayType.Button:
+          throw new NotImplementedException(type.ToString());
+        default:
+          return new DataField(
+            name: title,
+            type: type,
+            validation: validation,
+            tooltip: tooltip,
+            value: value,
+            enable: enabledIf
+        );
+      }
+    }
   }
 }

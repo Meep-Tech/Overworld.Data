@@ -8,7 +8,7 @@
     /// <summary>
     /// The view this element is in.
     /// </summary>
-    UxView View {
+    View View {
       get;
     }
 
@@ -16,6 +16,6 @@
     /// Make a copy of the element and it's state.
     /// Provide the new view if there is one, if not, it will be set on setting in the builder.
     /// </summary>
-    IUxViewElement Copy(UxView toNewView = null);
+    IUxViewElement Copy(View toNewView = null);
   }
 }

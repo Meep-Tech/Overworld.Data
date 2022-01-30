@@ -8,7 +8,7 @@ namespace Overworld.Ux.Simple {
   /// A Text specific Simple Ux Field.
   /// Can be used for input, or Read Only for just display text.
   /// </summary>
-  public class UxTextField : UxDataField {
+  public class TextField : DataField {
 
     /// <summary>
     /// Placeholder text for the input
@@ -20,20 +20,20 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
-    public UxTextField(
+    public TextField(
       string name,
       string placeholderText = null,
       string tooltip = null,
       object value = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<UxDataField, UxView, bool> enabledIf = null,
+      Func<DataField, View, bool> enabledIf = null,
       Func<string, bool> validation = null
     ) : base(
       DisplayType.Text,
       name,
       tooltip,
-      value,
+      value ?? "",
       dataKey,
       isReadOnly,
       enabledIf,

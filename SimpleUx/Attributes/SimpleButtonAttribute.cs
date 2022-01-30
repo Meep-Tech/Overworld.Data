@@ -3,7 +3,7 @@
 namespace Overworld.Ux.Simple {
   /// <summary>
   /// Denotes a method that should be auto rendered as a button.
-  /// A valid method takes either no parameters, or a UxSimpleButton(the one clicked on) and a UXPannel as parameters.
+  /// A valid method takes either no parameters, or a SimpleButton(the one clicked on) and a Pannel as parameters.
   /// TODO: impliment
   /// </summary>
   [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]

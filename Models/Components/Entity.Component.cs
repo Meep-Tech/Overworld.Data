@@ -69,7 +69,7 @@ namespace Overworld.Data {
       /// </summary>
       /// <param name="ux">The ux for this component</param>
       /// <param name="updatedFieldKey">(optional) a field that was changed.</param>
-      protected void UpdateFromUxFieldChange(Ux.Simple.UxView ux, string updatedFieldKey = null) {
+      protected void UpdateFromFieldChange(Ux.Simple.View ux, string updatedFieldKey = null) {
         if(updatedFieldKey is not null && ux._fields.TryGetValue(updatedFieldKey, out var found)) {
           if(updatedFieldKey.Contains(':')) {
             var parts = updatedFieldKey.Split(':');
