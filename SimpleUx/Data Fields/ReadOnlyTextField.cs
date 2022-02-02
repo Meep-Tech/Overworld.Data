@@ -10,9 +10,6 @@ namespace Overworld.Ux.Simple {
   /// </summary>
   public class ReadOnlyTextField : TextField {
 
-    /// <summary>
-    /// <inheritdoc/>
-    /// </summary>
     public ReadOnlyTextField(
       object text,
       string title = null,

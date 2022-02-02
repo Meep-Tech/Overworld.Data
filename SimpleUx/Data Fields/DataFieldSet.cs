@@ -33,7 +33,7 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enable = null,
-      Func<int, object, bool> validation = null
+      Func<DataField, KeyValuePair<int, object>, bool> validation = null
     ) : base(
       DataFieldSet.DisplayType.FieldList,
       name,
@@ -42,7 +42,7 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enable,
-      validation
+      (f, v) => validation(f, (KeyValuePair<int, object>)v)
     ) {
       DataType = dataType;
       _childFieldAttributes = childFieldAttributes;

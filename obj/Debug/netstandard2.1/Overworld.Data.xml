@@ -1084,11 +1084,49 @@
             This returns false if the file exists already, meaning there's already an archetype with the given key.
             </summary>
         </member>
+        <member name="M:Overworld.Utility.StringExtensions.ToDisplayCase(System.String)">
+            <summary>
+            Make a string from "CamelCase" to "Display Case"
+            </summary>
+        </member>
+        <member name="M:Overworld.Utility.DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Overworld.Utility.DictionaryExtensions.ValueCollectionContains``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Overworld.Utility.DictionaryExtensions.AddToHashSet``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.HashSet{``1}},``0,``1)">
+            <summary>
+            Add an item to a ICollection within a dictionary at the given key
+            </summary>
+        </member>
+        <member name="M:Overworld.Utility.DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
+            <summary>
+            Remove an item from an ICollection within a dictionary at the given key
+            </summary>
+        </member>
         <member name="T:Overworld.Ux.Simple.CannotBeNegative">
             <summary>
             Denotes a field that should not be negative.
             Overriden by range slider attribute.
             </summary>
+        </member>
+        <member name="T:Overworld.Ux.Simple.DropdownAttribute">
+            <summary>
+            Used to indicate a field where you can select one of a set of options.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DropdownAttribute.#ctor(System.Boolean,System.Object[],System.String[])">
+            <summary>
+            Make a new selectable
+            </summary>
+            <param name="MultiSelect">If more than one value can be selected</param>
+            <param name="OptionValues">The option values. If no names are provided, these are turned into strings and those are used as the field keys</param>
+            <param name="OptionNames">The option names. Must either have none, or the same number as the values</param>
         </member>
         <member name="T:Overworld.Ux.Simple.EnableIfAttribute">
             <summary>
@@ -1119,16 +1157,16 @@
             Overriden by range slider attribute.
             </summary>
         </member>
-        <member name="T:Overworld.Ux.Simple.SelectableAttribute">
-            <summary>
-            Used to indicate a field where you can select one of a set of options.
-            </summary>
-        </member>
         <member name="T:Overworld.Ux.Simple.SimpleButtonAttribute">
             <summary>
             Denotes a method that should be auto rendered as a button.
             A valid method takes either no parameters, or a SimpleButton(the one clicked on) and a Pannel as parameters.
             TODO: impliment
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.SimpleButtonAttribute.#ctor(System.String,System.String)">
+            <summary>
+            Make a simple button out of a method, with an overrideable display name and key.
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.TooltipAttribute">
@@ -1236,7 +1274,7 @@
             Used to determine if the field should be enabled.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Object)">
+        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Object,System.Boolean})">
             <summary>
             Make a new data field for a Simple Ux.
             </summary>
@@ -1264,9 +1302,10 @@
         <member name="M:Overworld.Ux.Simple.DataField.Overworld#Ux#Simple#IUxViewElement#Copy(Overworld.Ux.Simple.View)">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Object,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String)">
+        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,System.Object,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String,System.Collections.Generic.Dictionary{System.Type,System.Attribute})">
             <summary>
-            Make a new field that fits your needs
+            Make a new field that fits your needs.
+            Some field types require attribute data.
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.DataFieldKeyValueSet">
@@ -1274,7 +1313,24 @@
             Represents a key value set in a ui
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{System.Collections.Generic.KeyValuePair{System.String,System.Object},System.Boolean})">
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Value">
+            <summary>
+            The values
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Keys">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Values">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Count">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Item(System.String)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.String,System.Object},System.Boolean})">
             <summary>
             Make a key value set to display in a ux.
             </summary>
@@ -1297,6 +1353,36 @@
             remove the item at the collection index
             </summary>
         </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Add(System.String,System.Object)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.ContainsKey(System.String)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Remove(System.String)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.TryGetValue(System.String,System.Object@)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Add(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Clear">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Contains(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.CopyTo(System.Collections.Generic.KeyValuePair{System.String,System.Object}[],System.Int32)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Remove(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.GetEnumerator">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="T:Overworld.Ux.Simple.DataFieldSet">
             <summary>
             Represents a key value set in a ui
@@ -1307,7 +1393,7 @@
             The type of data this set holds.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{System.Int32,System.Object,System.Boolean})">
+        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.Int32,System.Object},System.Boolean})">
             <summary>
             Make a key value set to display in a ux.
             </summary>
@@ -1330,6 +1416,26 @@
             remove the item at the collection index
             </summary>
         </member>
+        <member name="T:Overworld.Ux.Simple.DropdownSelectField">
+            <summary>
+            A drop down that can select values
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.Options">
+            <summary>
+            The valid options, indexed by their display key
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.MultiselectAllowed">
+            <summary>
+            If the user can select more than one value
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.Value">
+            <summary>
+            The value(s) selected.
+            </summary>
+        </member>
         <member name="T:Overworld.Ux.Simple.RangeSliderField">
             <summary>
             A slider for a value between the min and max.
@@ -1345,20 +1451,10 @@
             If this only allows whole numbers
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.RangeSliderField.#ctor(System.String,System.Single,System.Single,System.Boolean,System.String,System.Nullable{System.Single},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean})">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
         <member name="T:Overworld.Ux.Simple.ReadOnlyTextField">
             <summary>
             A Text specific Simple Ux Field.
             Used just to display text
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.ReadOnlyTextField.#ctor(System.Object,System.String,System.String,System.String)">
-            <summary>
-            <inheritdoc/>
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.TextField">
@@ -1372,11 +1468,6 @@
             Placeholder text for the input
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.TextField.#ctor(System.String,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{System.String,System.Boolean})">
-            <summary>
-            <inheritdoc/>
-            </summary>
-        </member>
         <member name="T:Overworld.Ux.Simple.ToggleField">
             <summary>
             A boolean toggle specific Simple Ux Field.
@@ -1385,11 +1476,6 @@
         <member name="P:Overworld.Ux.Simple.ToggleField.PlaceholderText">
             <summary>
             Placeholder text for the input
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.ToggleField.#ctor(System.String,System.String,System.Boolean,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{System.Boolean,System.Boolean})">
-            <summary>
-            <inheritdoc/>
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.IUxViewElement">
@@ -1638,12 +1724,37 @@
             Get a field by key
             </summary>
         </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetField(System.String)">
+            <summary>
+            try to get a field by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetField(System.String,Overworld.Ux.Simple.DataField@)">
+            <summary>
+            try to get a field by key
+            </summary>
+        </member>
         <member name="M:Overworld.Ux.Simple.View.GetFieldValue(System.String)">
             <summary>
             Get a field value by key
             </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.View.GetFieldValue``1(System.String)">
+            <summary>
+            Get a field value by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetValueFromKeyValueFieldSet``1(System.String,System.String)">
+            <summary>
+            Try to Get a field value by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetValueFromKeyValueFieldSet``1(System.String,System.String,``0@)">
+            <summary>
+            Try to Get a field value by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.GetValueFromKeyValueFieldSet``1(System.String,System.String)">
             <summary>
             Get a field value by key
             </summary>
@@ -1817,26 +1928,6 @@
             An ordered collection of delegates
             </summary>
             <typeparam name="TAction"></typeparam>
-        </member>
-        <member name="M:DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:DictionaryExtensions.ValueCollectionContains``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:DictionaryExtensions.AddToHashSet``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.HashSet{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Remove an item from an ICollection within a dictionary at the given key
-            </summary>
         </member>
         <member name="T:TagedCollection`2">
             <summary>

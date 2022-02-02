@@ -95,6 +95,20 @@ namespace Overworld.Ux.Simple {
       => _fields[key];
 
     /// <summary>
+    /// try to get a field by key
+    /// </summary>
+    public DataField TryToGetField(string key)
+      => _fields.TryGetValue(key, out var value)
+       ? value
+       : null;
+
+    /// <summary>
+    /// try to get a field by key
+    /// </summary>
+    public bool TryToGetField(string key, out DataField field)
+      => _fields.TryGetValue(key, out field);
+
+    /// <summary>
     /// Get a field value by key
     /// </summary>
     public object GetFieldValue(string key)
@@ -105,6 +119,32 @@ namespace Overworld.Ux.Simple {
     /// </summary>
     public TValue GetFieldValue<TValue>(string key)
       => (TValue)_fields[key].Value;
+
+    /// <summary>
+    /// Try to Get a field value by key
+    /// </summary>
+    public TValue TryToGetValueFromKeyValueFieldSet<TValue>(string fieldKey, string valueKey) {
+      object found = null;
+      bool success = (TryToGetField(fieldKey) as DataFieldKeyValueSet)?.TryGetValue(valueKey, out found) ?? false;
+      return  success ? (TValue)found : default;
+    }
+
+    /// <summary>
+    /// Try to Get a field value by key
+    /// </summary>
+    public bool TryToGetValueFromKeyValueFieldSet<TValue>(string fieldKey, string valueKey, out TValue value) {
+      object found = null;
+      bool success = (TryToGetField(fieldKey) as DataFieldKeyValueSet)?.TryGetValue(valueKey, out found) ?? false;
+      value = (TValue)(found ?? default(TValue));
+
+      return success;
+    }
+
+    /// <summary>
+    /// Get a field value by key
+    /// </summary>
+    public TValue GetValueFromKeyValueFieldSet<TValue>(string fieldKey, string valueKey)
+      => (TValue)((DataFieldKeyValueSet)GetField(fieldKey)).Value[valueKey];
 
     /// <summary>
     /// Copy this view layout and current values.

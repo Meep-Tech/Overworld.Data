@@ -17,9 +17,6 @@ namespace Overworld.Ux.Simple {
       get;
     }
 
-    /// <summary>
-    /// <inheritdoc/>
-    /// </summary>
     public TextField(
       string name,
       string placeholderText = null,
@@ -28,7 +25,7 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enabledIf = null,
-      Func<string, bool> validation = null
+      Func<DataField, string, bool> validation = null
     ) : base(
       DisplayType.Text,
       name,
@@ -37,7 +34,7 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf,
-      validation
+      (f, v) => validation(f, (string)v)
     ) {
       PlaceholderText = placeholderText;
     }

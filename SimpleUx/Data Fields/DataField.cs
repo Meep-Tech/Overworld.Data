@@ -23,8 +23,7 @@ namespace Overworld.Ux.Simple {
       Text,
       Toggle,
       RangeSlider,
-      SelectOneOfManyDropdown,
-      SelectManyDropdown,
+      Dropdown,
       FieldList,
       KeyValueFieldList,
       Executeable,
@@ -116,7 +115,7 @@ namespace Overworld.Ux.Simple {
       string dataKey = null, 
       bool isReadOnly = false,
       Func<DataField, View, bool> enable = null,
-      object validation = null
+      Func<DataField, object, bool> validation = null
     ) {
       Type = type;
       Name = name;
@@ -144,12 +143,22 @@ namespace Overworld.Ux.Simple {
       switch(Type) {
         case DisplayType.RangeSlider:
           if(Validation?.GetType() == typeof((float, float))) {
-            double number = (double)value;
+            double number = Math.Round(
+              double.TryParse(
+                value?.ToString() 
+                  ?? "",
+                out double d
+              )
+                ? d 
+                : 0,
+              2
+            );
             (double min, double max) bounds = (((float, float))Validation);
             if(number > bounds.max && number < bounds.min) {
               message = "Number Out Of Range Bounds";
               return false;
             }
+            value = number;
           }
           break;
         case DisplayType.Text:
@@ -217,7 +226,8 @@ namespace Overworld.Ux.Simple {
       => Copy(toNewView);
 
     /// <summary>
-    /// Make a new field that fits your needs
+    /// Make a new field that fits your needs.
+    /// Some field types require attribute data.
     /// </summary>
     public static DataField Make(
       DisplayType type, 
@@ -225,9 +235,10 @@ namespace Overworld.Ux.Simple {
       string tooltip = null, 
       object value = null,
       bool isReadOnly = false,
-      object validation = null,
+      Func<DataField, object, bool> validation = null,
       Func<DataField, View, bool> enabledIf = null,
-      string dataKey = null
+      string dataKey = null,
+      Dictionary<Type, Attribute> attributes = null
     ) {
       switch(type) {
         case DisplayType.Text:
@@ -241,7 +252,7 @@ namespace Overworld.Ux.Simple {
           } else
             return new TextField(
               name: title,
-              validation: validation as System.Func<string, bool>,
+              validation: validation,
               tooltip: tooltip,
               value: value,
               enabledIf: enabledIf,
@@ -253,21 +264,22 @@ namespace Overworld.Ux.Simple {
             : float.TryParse(value.ToString(), out float parsedAsFloat) && parsedAsFloat > 0;
           return new ToggleField(
             name: title,
-            validation: validation as System.Func<bool, bool>,
+            validation: (f,v) => validation(f,v),
             tooltip: tooltip,
             value: boolValue,
             enabledIf: enabledIf,
             dataKey: dataKey
           );
         case DisplayType.RangeSlider:
-          bool clamped = false;
-          (float min, float max)? minAndMax = null;
-          if(validation is (int clampedMin, int clampedMax)) {
-            clamped = true;
-            minAndMax = (clampedMin, clampedMax);
-          } else if(validation is (float min, float max)) {
-            minAndMax = (min, max);
-          }
+          RangeSliderAttribute rangeSliderAttribute
+            = attributes.TryGetValue(typeof(RangeSliderAttribute), out var foundrsa)
+              ? foundrsa as RangeSliderAttribute
+              : null;
+
+          bool clamped = rangeSliderAttribute?._isClampedToInt ?? false;
+          (float min, float max)? minAndMax = rangeSliderAttribute is not null
+            ? (rangeSliderAttribute._min, rangeSliderAttribute._max)
+            : null;
 
           float? floatValue = value is float asFloat
             ? asFloat
@@ -283,20 +295,37 @@ namespace Overworld.Ux.Simple {
             tooltip: tooltip,
             value: floatValue,
             enabledIf: enabledIf,
-            dataKey: dataKey
+            dataKey: dataKey,
+            validation: (f, v) => validation(f, v)
           );
         case DisplayType.KeyValueFieldList:
           return new DataFieldKeyValueSet(
             name: title,
             rows: value as Dictionary<string, object>,
-            extraEntryValidation: validation as Func<KeyValuePair<string, object>, bool>,
+            extraEntryValidation: (f, v) => validation(f, v),
             tooltip: tooltip,
             dataKey: dataKey,
+            childFieldAttributes: attributes.Values,
             isReadOnly: isReadOnly,
             enable: enabledIf
           );
-        case DisplayType.SelectOneOfManyDropdown:
-        case DisplayType.SelectManyDropdown:
+        case DisplayType.Dropdown:
+          DropdownAttribute selectableData = attributes.TryGetValue(typeof(DropdownAttribute), out var found)
+            ? found as DropdownAttribute
+            : null;
+
+          Dictionary<string, object> options = selectableData?._options;
+          return new DropdownSelectField(
+            name: title,
+            options: options ?? throw new ArgumentNullException(nameof(options)),
+            tooltip: tooltip,
+            multiselectIsAllowed: selectableData?._isMultiselect ?? false,
+            alreadySelectedOptionKeys: value as string[],
+            dataKey: dataKey,
+            isReadOnly: isReadOnly,
+            enabledIf: enabledIf,
+            validation: (f, v) => validation(f, v)
+          );
         case DisplayType.FieldList:
         case DisplayType.Executeable:
         case DisplayType.ColorPicker:

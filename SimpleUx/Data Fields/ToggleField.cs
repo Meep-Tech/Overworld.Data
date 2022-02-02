@@ -13,9 +13,6 @@ namespace Overworld.Ux.Simple {
       get;
     }
 
-    /// <summary>
-    /// <inheritdoc/>
-    /// </summary>
     public ToggleField(
       string name,
       string tooltip = null, 
@@ -23,7 +20,7 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false, 
       Func<DataField, View, bool> enabledIf = null,
-      Func<bool, bool> validation = null
+      Func<DataField, bool, bool> validation = null
     ) : base(
       DisplayType.Toggle, 
       name, 
@@ -32,7 +29,7 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf, 
-      validation
+      (f,v) => validation(f,(bool)v)
     ) {}
   }
 }

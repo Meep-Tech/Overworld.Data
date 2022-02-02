@@ -1,9 +1,11 @@
 ﻿using System;
 
 namespace Overworld.Ux.Simple {
+
   /// <summary>
   /// Adds a tooltip to the field.
   /// </summary>
+  [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
   public class TooltipAttribute : Attribute {
     internal string _text;
 

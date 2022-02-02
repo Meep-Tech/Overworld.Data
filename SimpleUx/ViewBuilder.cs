@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Data;
 using Meep.Tech.Data.Utility;
+using Overworld.Utility;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -65,39 +66,41 @@ namespace Overworld.Ux.Simple {
     public static DataField BuildDefaultField(PropertyInfo prop)
       => BuildDefaultField(prop.PropertyType, prop);
 
-    static DataField BuildDefaultField(System.Type fieldType, MemberInfo fieldInfo = null, string fieldNameOverride = null) {
+    static DataField BuildDefaultField(System.Type fieldType, MemberInfo fieldInfo = null, string fieldNameOverride = null, string fieldDataKeyOverride = null) {
       // get relevant attributes:
-      TooltipAttribute tooltip = fieldInfo?.GetCustomAttribute<TooltipAttribute>();
-      SelectableAttribute selectableData = fieldInfo?.GetCustomAttribute<SelectableAttribute>();
+      TooltipAttribute tooltipAttribute = fieldInfo?.GetCustomAttribute<TooltipAttribute>();
+      DropdownAttribute selectableData = fieldInfo?.GetCustomAttribute<DropdownAttribute>();
       DefaultValueAttribute defaultValue = fieldInfo?.GetCustomAttribute<DefaultValueAttribute>();
       ValidationAttribute validationAttribute = fieldInfo?.GetCustomAttribute<ValidationAttribute>();
       EnableIfAttribute enabledAttribute = fieldInfo?.GetCustomAttribute<EnableIfAttribute>();
+      RangeSliderAttribute rangeSliderData = null;
 
       string name = fieldNameOverride ?? null;
       DataField.DisplayType? type = null;
       object validation = validationAttribute?._validation ?? null;
-      string tooltipText = tooltip?._text;
-      object defaultFieldValue = null;
+      Func<DataField, object, bool> validationFunction = null;
+      string tooltipText = tooltipAttribute?._text;
+      object defaultFieldValue = defaultValue?.Value;
       bool isClamped = false;
       Func<DataField, View, bool> enabled = null;
 
       // Check if the validation points to a local method of some kind that fits what we need
       if(validation is not null && validation is string validationFunctionName) {
-        validation = fieldInfo.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(method => method.Name == validationFunctionName)
+        validationFunction = (f, v) => (bool)fieldInfo.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(method => method.Name == validationFunctionName)
           .Where(method => method.GetParameters().Length == 1)
-          .Where(method => method.ReturnType == typeof(bool) || method.ReturnType == typeof((bool, string))).FirstOrDefault() ?? validation;
+          .Where(method => method.ReturnType == typeof(bool) || method.ReturnType == typeof((bool, string))).First().Invoke(null, new[] { f, v });
       }
 
       // check the is enabled functionality
       if(enabledAttribute is not null) {
-        if(fieldInfo.DeclaringType.GetProperty(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is PropertyInfo property) {
+        if(fieldInfo?.DeclaringType.GetProperty(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is PropertyInfo property) {
           if(property.PropertyType != typeof(bool)) {
             enabled = (Field, Pannel) => (bool)property.GetValue(Field);
           } else if(property.PropertyType != typeof(Func<DataField, View, bool>)) {
             enabled = (Field, Pannel) => ((Func<DataField, View, bool>)property.GetValue(Field)).Invoke(Field, Pannel);
           } else
             throw new NotSupportedException($"Cannot use the field {property.Name} as an isEnabled determination field for simple ux.");
-        } else if(fieldInfo.DeclaringType.GetField(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is FieldInfo field) {
+        } else if(fieldInfo?.DeclaringType.GetField(enabledAttribute._validationFieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) is FieldInfo field) {
           if(field.FieldType != typeof(bool)) {
             enabled = (Field, Pannel) => (bool)field.GetValue(Field);
           } else if(field.FieldType != typeof(Func<DataField, View, bool>)) {
@@ -110,50 +113,66 @@ namespace Overworld.Ux.Simple {
 
       /// Seletctable dropdown fields
       if(selectableData is not null || fieldType.IsEnum) {
-        type = (selectableData?._isMultiselect ?? false)
-          ? DataField.DisplayType.SelectManyDropdown
-          : DataField.DisplayType.SelectOneOfManyDropdown;
-        validation = selectableData?._options ?? Enum.GetValues(fieldType).Cast<object>().Select(e => {
-          // TODO: make this static somewhere:
-          // Makes capscase into spaced words text.
-          return Regex.Replace(e.ToString(), "(?<!^)([A-Z][a-z]|(?<=[a-z])[A-Z])", " $1");
-        });
+        selectableData ??= new DropdownAttribute(selectableData?._isMultiselect ?? false);
+        type = DataField.DisplayType.Dropdown;
+        Dictionary<string, object> options = selectableData?._options;
+        if(fieldType.IsEnum) {
+          Array enumValues = Enum.GetValues(fieldType);
+          selectableData._options ??= new(Enum.GetValues(fieldType).Cast<object>().Zip(
+            enumValues.Cast<char>(), (n, v) => new KeyValuePair<string, object>(n.ToString().ToDisplayCase(), v)
+          ));
+          defaultFieldValue ??= Activator.CreateInstance(fieldType);
+        }
       } else
-
       /// Potential text input fields
       // Numeric:
       if((isClamped = fieldType == typeof(int)) || fieldType == typeof(double) || fieldType == typeof(float)) {
-        RangeSliderAttribute rangeSliderData;
-        if((rangeSliderData = fieldInfo?.GetCustomAttribute<RangeSliderAttribute>()) != null) {
-          type = DataField.DisplayType.RangeSlider;
-          validation = isClamped
-            ? ((int)rangeSliderData._min, (int)rangeSliderData._max) : (rangeSliderData._min, rangeSliderData._max);
-        } else {
-          if(fieldType == typeof(int)) {
-            validation = (Func<object, bool>)(value => int.TryParse(value as string, out _));
-          } else
-            validation = (Func<object, bool>)(value => double.TryParse(value as string, out _));
-        }
+        Func<double, bool> rangeValidation = null;
+        bool? isIntClamped = null;
+        (float min, float max)? range = validation is (float mi, float ma)
+          ? (mi, ma)
+          : null;
 
-        defaultFieldValue = 0;
+        // see if there's range validation to be added.
+        if(range is not null || ((rangeSliderData = fieldInfo?.GetCustomAttribute<RangeSliderAttribute>()) != null)) {
+          type = rangeSliderData is not null 
+            ? DataField.DisplayType.RangeSlider
+            : type;
+          rangeValidation = value
+            => value < (rangeSliderData?._min ?? range?.min) && value > (rangeSliderData?._max ?? range?.max);
+          isIntClamped = rangeSliderData?._isClampedToInt;
+        } else {
+          type = DataField.DisplayType.Text;
+        }
+        isIntClamped ??= fieldType == typeof(int);
+        rangeSliderData ??= new RangeSliderAttribute(0, isIntClamped.Value ? 100 : 1, isIntClamped);
+
+        Func<DataField, object, bool> numericValidation = isIntClamped.Value
+              ? (field, value) => int.TryParse(value as string, out int val) && (rangeValidation?.Invoke(val) ?? true)
+              : (field, value) => double.TryParse(value as string, out double val) && (rangeValidation?.Invoke(val) ?? true);
+        validationFunction = validationFunction is not null
+          ? numericValidation + validationFunction
+          : numericValidation;
+
+        defaultFieldValue ??= 0;
       }//String
       else if(fieldType == typeof(string)) {
         type = DataField.DisplayType.Text;
-        defaultFieldValue = "";
+        defaultFieldValue ??= "";
       } //Char
       else if(fieldType == typeof(char)) {
         validation = (Func<object, bool>)(value => ((value as string)?.Length ?? 0) <= 1);
         type = DataField.DisplayType.Text;
-        defaultFieldValue = "";
+        defaultFieldValue ??= "";
       }
       /// Boolean toggle
       else if(fieldType == typeof(bool)) {
         type = DataField.DisplayType.Toggle;
-        defaultFieldValue = false;
+        defaultFieldValue ??= false;
       } /// Color Selector
       else if(fieldType == typeof(Color)) {
         type = DataField.DisplayType.ColorPicker;
-        defaultFieldValue = new Color();
+        defaultFieldValue ??= new Color();
       } /// Key value list
       else if(typeof(IDictionary).IsAssignableFrom(fieldType) || fieldType.IsAssignableToGeneric(typeof(IReadOnlyDictionary<,>))) {
         // TODO: dictionarys should be special for executables
@@ -164,7 +183,7 @@ namespace Overworld.Ux.Simple {
           }
         }
 
-        defaultFieldValue = @default;
+        defaultFieldValue ??= @default;
       } else if(fieldType == typeof(Overworld.Data.Executeable)) {
         // TODO: throw new NotImplementedException($"Executables not yet implimented");
       } else if(typeof(IEnumerable<Data.Executeable>).IsAssignableFrom(fieldType)) {
@@ -179,12 +198,21 @@ namespace Overworld.Ux.Simple {
       }
 
       return DataField.Make(
-        title: name ?? fieldInfo.Name,
+        title: name ?? fieldInfo?.Name,
         type: type.Value,
-        validation: validation,
+        validation: validationFunction,
         tooltip: tooltipText,
-        value: defaultFieldValue ?? defaultValue?.Value ?? null,
-        enabledIf: enabled
+        value: defaultFieldValue,
+        enabledIf: enabled,
+        attributes: new Attribute[] {
+          tooltipAttribute,
+          selectableData,
+          defaultValue,
+          validationAttribute,
+          enabledAttribute,
+          rangeSliderData
+        }.ToDictionary(attribute => attribute.GetType()),
+        dataKey: fieldDataKeyOverride
       );
     }
 
@@ -420,7 +448,7 @@ namespace Overworld.Ux.Simple {
       if(element is DataFieldKeyValueSet keyValueSet) {
         // TODO: allow people to apply certain attributes, like the range display one, to a dictionary, and it will apply to the children.
         foreach(KeyValuePair<string, object> entry in keyValueSet.Value as Dictionary<string, object>) {
-          DataField field = BuildDefaultField(entry.Value.GetType(), fieldNameOverride: keyValueSet.Name + ":" + entry.Key);
+          DataField field = BuildDefaultField(entry.Value.GetType(), null, fieldNameOverride: "", fieldDataKeyOverride: keyValueSet.Name + "::" + entry.Key);
           field._controllerField = keyValueSet;
           _currentColumnEntries.Add(field);
         }

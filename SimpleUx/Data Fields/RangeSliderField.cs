@@ -21,9 +21,6 @@ namespace Overworld.Ux.Simple {
       get;
     }
 
-    /// <summary>
-    /// <inheritdoc/>
-    /// </summary>
     public RangeSliderField(
       string name,
       float min,
@@ -33,7 +30,8 @@ namespace Overworld.Ux.Simple {
       float? value = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<DataField, View, bool> enabledIf = null
+      Func<DataField, View, bool> enabledIf = null,
+      Func<DataField, float, bool> validation = null
     ) : base(
       DisplayType.RangeSlider,
       name,
@@ -42,7 +40,7 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf,
-      clampedToWholeNumbers ? ((int)Math.Floor(min), (int)Math.Floor(max)) : (min, max)
+      (f, v) => validation(f, (float)v)
     ) {
       IsClampedToWholeNumbers = clampedToWholeNumbers;
       ValidRange = clampedToWholeNumbers ? ((int)Math.Floor(min), (int)Math.Floor(max)) : (min, max);

@@ -8,11 +8,15 @@ namespace Overworld.Ux.Simple {
   /// </summary>
   [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
   public class SimpleButtonAttribute : Attribute {
-    internal string _buttonName;
+    internal string _buttonTitle;
+    internal string _buttonKey;
 
-    public SimpleButtonAttribute(string Name = null) {
-      _buttonName = null;
-      throw new NotImplementedException();
+    /// <summary>
+    /// Make a simple button out of a method, with an overrideable display name and key.
+    /// </summary>
+    public SimpleButtonAttribute(string Name = null, string Key = null) {
+      _buttonTitle = Name;
+      _buttonKey = Key;
     }
   }
 }
