@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Overworld.Ux.Simple {
   /// <summary>
@@ -13,7 +16,25 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false, 
       Func<DataField, View, bool> enabledIf = null,
-      Func<DataField, bool, bool> validation = null
+      params Func<DataField, bool, (bool success, string message)>[] validations
+    ) : this(
+      name, 
+      tooltip,
+      value,
+      dataKey,
+      isReadOnly,
+      enabledIf, 
+      validations?.AsEnumerable()
+    ) {}
+
+    public ToggleField(
+      string name,
+      string tooltip = null, 
+      bool value = false,
+      string dataKey = null,
+      bool isReadOnly = false, 
+      Func<DataField, View, bool> enabledIf = null,
+      IEnumerable<Func<DataField, bool, (bool success, string message)>> validations = null
     ) : base(
       DisplayType.Toggle, 
       name, 
@@ -22,7 +43,8 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf, 
-      (f,v) => validation(f,(bool)v)
+      validations?
+        .Select(func => func.CastMiddleType<bool, object>())
     ) {}
   }
 }

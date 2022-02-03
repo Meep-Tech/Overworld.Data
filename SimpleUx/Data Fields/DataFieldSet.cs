@@ -8,7 +8,7 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Represents a key value set in a ui
   /// </summary>
-  public class DataFieldSet : DataField {
+  public class DataFieldSet : DataField, IIndexedItemsDataField {
 
     /// <summary>
     /// The type of data this set holds.
@@ -18,6 +18,7 @@ namespace Overworld.Ux.Simple {
     }
 
     internal IEnumerable<Attribute> _childFieldAttributes;
+    Func<DataField, KeyValuePair<int, object>, (bool success, string message)>[] _entryValidations;
 
     /// <summary>
     /// Make a key value set to display in a ux.
@@ -34,7 +35,8 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enable = null,
-      Func<DataField, KeyValuePair<int, object>, bool> validation = null
+      Func<DataField, KeyValuePair<int, object>, (bool success, string message)>[] entryValidations = null,
+      Func<DataField, ArrayList, (bool success, string message)>[] fullValidations = null
     ) : base(
       DataFieldSet.DisplayType.FieldList,
       name,
@@ -43,10 +45,12 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enable,
-      (f, v) => validation(f, (KeyValuePair<int, object>)v)
+      fullValidations
+        ?.Select(func => func.CastMiddleType<ArrayList, object>())
     ) {
       DataType = dataType;
       _childFieldAttributes = childFieldAttributes;
+      _entryValidations = entryValidations;
     }
 
     ///<summary><inheritdoc/></summary>
@@ -59,6 +63,11 @@ namespace Overworld.Ux.Simple {
       (value as DataFieldSet)._childFieldAttributes = _childFieldAttributes;
 
       return value;
+    }
+
+    ///<summary><inheritdoc/></summary>
+    public bool TryToUpdateValueAtIndex(object key, object newValue, out string resultMessage) {
+      throw new NotImplementedException();
     }
 
     /// <summary>

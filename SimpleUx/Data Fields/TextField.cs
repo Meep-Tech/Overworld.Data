@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 
@@ -25,7 +26,29 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enabledIf = null,
-      Func<DataField, string, bool> validation = null
+      params Func<DataField, string, (bool success, string message)>[] validations
+    ) : this(
+      name,
+      placeholderText,
+      tooltip,
+      value ?? "",
+      dataKey,
+      isReadOnly,
+      enabledIf,
+      validations?.AsEnumerable()
+    ) {
+      PlaceholderText = placeholderText;
+    }
+
+    public TextField(
+      string name,
+      string placeholderText = null,
+      string tooltip = null,
+      object value = null,
+      string dataKey = null,
+      bool isReadOnly = false,
+      Func<DataField, View, bool> enabledIf = null,
+      IEnumerable<Func<DataField, string, (bool success, string message)>> validations = null
     ) : base(
       DisplayType.Text,
       name,
@@ -34,7 +57,8 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf,
-      (f, v) => validation(f, (string)v)
+      validations?
+        .Select(func => func.CastMiddleType<string, object>())
     ) {
       PlaceholderText = placeholderText;
     }

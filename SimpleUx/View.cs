@@ -173,7 +173,7 @@ namespace Overworld.Ux.Simple {
       _fields = newPannelDic.Values
         .SelectMany(pannel => pannel.Elements._getExpandedFieldsByKey())
         .ToDictionary(
-          e => e.Key.ToLower(),
+          e => e.Key,
           e => e.Value
         );
 
@@ -187,7 +187,7 @@ namespace Overworld.Ux.Simple {
     /// <inheritdoc/>
     /// </summary>
     public IEnumerator<KeyValuePair<Pannel.Tab, Pannel>> GetEnumerator()
-      => _pannels.Select(_pannelData => new KeyValuePair<Pannel.Tab, Pannel>(_tabs[_pannelData.Key], _pannelData.Value)).GetEnumerator();
+      => _pannels.Select(_pannelData => new KeyValuePair<Pannel.Tab, Pannel>(_tabs[_pannelData.Key.ToLower()], _pannelData.Value)).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
       => GetEnumerator();

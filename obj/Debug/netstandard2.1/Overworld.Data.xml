@@ -1273,10 +1273,9 @@
             The type of display this field should use.
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataField.Validation">
+        <member name="P:Overworld.Ux.Simple.DataField.Validations">
             <summary>
-            Used differently for different kinds of fields.
-            Can also be replaced with a Func that takes the current value as an object and returns a bool, or (bool success, string message) tuple to override default behaviours
+            Functions that take the current field, and updated object data, and validate it.
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DataField.Value">
@@ -1316,7 +1315,7 @@
             Used to determine if the field should be enabled.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Object,System.Boolean})">
+        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}[])">
             <summary>
             Make a new data field for a Simple Ux.
             </summary>
@@ -1327,7 +1326,20 @@
             <param name="dataKey">Used to get the value of this field from the view</param>
             <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
             <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-            <param name="validation">USed differently for different fields to validate data. Can be overriden with a null, or a Func(object Value)</param>
+            <param name="validations">functions used to validate changes to the field.</param>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}})">
+            <summary>
+            Make a new data field for a Simple Ux.
+            </summary>
+            <param name="type">the DisplayType to use for this field</param>
+            <param name="name">the field name. should be unique unless you change the data key</param>
+            <param name="tooltip">a breif description of the field, will appear on mouse hover in the ui</param>
+            <param name="value">default/current value of the field</param>
+            <param name="dataKey">Used to get the value of this field from the view</param>
+            <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
+            <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
+            <param name="validations">functions used to validate changes to the field.</param>
         </member>
         <member name="M:Overworld.Ux.Simple.DataField.TryToSetValue(System.Object,System.String@)">
             <summary>
@@ -1349,7 +1361,13 @@
         <member name="M:Overworld.Ux.Simple.DataField.Overworld#Ux#Simple#IUxViewElement#Copy(Overworld.Ux.Simple.View)">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,System.Object,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String,System.Collections.Generic.Dictionary{System.Type,System.Attribute})">
+        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String,System.Collections.Generic.Dictionary{System.Type,System.Attribute},System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}[])">
+            <summary>
+            Make a new field that fits your needs.
+            Some field types require attribute data.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String,System.Collections.Generic.Dictionary{System.Type,System.Attribute},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}})">
             <summary>
             Make a new field that fits your needs.
             Some field types require attribute data.
@@ -1377,21 +1395,18 @@
         <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Item(System.String)">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.String,System.Object},System.Boolean})">
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.String,System.Object},System.ValueTuple{System.Boolean,System.String}}},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.Dictionary{System.String,System.Object},System.ValueTuple{System.Boolean,System.String}}})">
             <summary>
             Make a key value set to display in a ux.
             </summary>
-            <param name="extraEntryValidation">Add validation other than the built in key validation</param>
+            <param name="entryValidations">Add validation other than the built in validation</param>
             <param name="childFieldAttributes">Add attributes to each generated child input</param>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
             <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._update(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
-            <summary>
-            Used to update the colletction
-            </summary>
-            <param name="pair"></param>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._removeLast">
             <summary>
@@ -1443,7 +1458,7 @@
             The type of data this set holds.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.Int32,System.Object},System.Boolean})">
+        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.Int32,System.Object},System.ValueTuple{System.Boolean,System.String}}[],System.Func{Overworld.Ux.Simple.DataField,System.Collections.ArrayList,System.ValueTuple{System.Boolean,System.String}}[])">
             <summary>
             Make a key value set to display in a ux.
             </summary>
@@ -1452,6 +1467,9 @@
             <param name="rowValues">The default/current list values</param>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldSet.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
             <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldSet._update(System.Collections.Generic.KeyValuePair{System.Int32,System.Object})">
@@ -1496,6 +1514,17 @@
         </member>
         <member name="M:Overworld.Ux.Simple.DropdownSelectField.Copy(Overworld.Ux.Simple.View,System.Boolean)">
             <summary><inheritdoc/></summary>
+        </member>
+        <member name="T:Overworld.Ux.Simple.IIndexedItemsDataField">
+            <summary>
+            A Data field that is an indexed collection of other fields.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.IIndexedItemsDataField.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
+            <summary>
+            Called after an individual field has validated itself.
+            Used to update the internal Value at the key with the updated child field value
+            </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.RangeSliderField">
             <summary>

@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Overworld.Ux.Simple {
 
   /// <summary>
   /// Represents a key value set in a ui
   /// </summary>
-  public class DataFieldKeyValueSet : DataField, IDictionary<string, object> {
+  public class DataFieldKeyValueSet : DataField, IDictionary<string, object>, IIndexedItemsDataField {
     internal IEnumerable<Attribute> _childFieldAttributes;
+    IEnumerable<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>> _entryValidations;
 
     /// <summary>
     /// The values
@@ -30,14 +32,14 @@ namespace Overworld.Ux.Simple {
 
     ///<summary><inheritdoc/></summary>
     public object this[string key] { 
-      get => ((IDictionary<string, object>)Value)[key]; 
-      set => ((IDictionary<string, object>)Value)[key] = value; 
+      get => Value[key]; 
+      set => Value[key] = value; 
     }
 
     /// <summary>
     /// Make a key value set to display in a ux.
     /// </summary>
-    /// <param name="extraEntryValidation">Add validation other than the built in key validation</param>
+    /// <param name="entryValidations">Add validation other than the built in validation</param>
     /// <param name="childFieldAttributes">Add attributes to each generated child input</param>
     public DataFieldKeyValueSet(
       string name,
@@ -47,7 +49,8 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enable = null,
-      Func<DataField, KeyValuePair<string, object>, bool> extraEntryValidation = null
+      IEnumerable<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>> entryValidations = null,
+      IEnumerable<Func<DataField, Dictionary<string, object>, (bool success, string message)>> fullValidations = null
     ) : base(
       DisplayType.KeyValueFieldList,
       name,
@@ -56,13 +59,39 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enable,
-      ((DataField _, object value) 
-        => (_._controllerField as DataFieldKeyValueSet).ContainsKey(((KeyValuePair<string, object>)value).Key)) 
-        + (extraEntryValidation is not null 
-          ? (Func<DataField, object, bool>)((f,v) => extraEntryValidation(f, (KeyValuePair<string, object>)v)) 
-          : ((_,_) => true))
+      fullValidations
+        ?.Select(func => func.CastMiddleType<Dictionary<string, object>, object>())
     ) {
       _childFieldAttributes = childFieldAttributes;
+      _entryValidations = entryValidations;
+    }
+
+    ///<summary><inheritdoc/></summary>
+    public bool TryToUpdateValueAtIndex(object key, object newValue, out string resultMessage) {
+      resultMessage = "";
+
+      if(_entryValidations is not null) {
+        //Default func
+        foreach((bool success, string message) in _entryValidations.Select(validator => validator(this, new KeyValuePair<string, object>(key as string, newValue)))) {
+          if(!success) {
+            resultMessage = string.IsNullOrWhiteSpace(message)
+              ? "Value did not pass custom entry validation functions."
+              : message;
+
+            return false;
+          } else
+            resultMessage = message;
+        }
+      }
+
+      try {
+        this[key as string] = newValue;
+      } catch (Exception e) {
+        resultMessage = e.Message;
+        return false;
+      }
+
+      return true;
     }
 
     ///<summary><inheritdoc/></summary>
@@ -73,14 +102,6 @@ namespace Overworld.Ux.Simple {
       (value as DataFieldSet)._childFieldAttributes = _childFieldAttributes;
 
       return value;
-    }
-
-    /// <summary>
-    /// Used to update the colletction
-    /// </summary>
-    /// <param name="pair"></param>
-    internal void _update(KeyValuePair<string, object> pair) {
-      throw new NotImplementedException();
     }
 
     /// <summary>

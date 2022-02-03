@@ -19,7 +19,27 @@ namespace Overworld.Ux.Simple {
       string dataKey = null, 
       bool isReadOnly = false, 
       Func<DataField, View, bool> enabledIf = null,
-      Func<DataField, KeyValuePair<string, object>, bool> validation = null
+      params Func<DataField, KeyValuePair<string, object>, (bool success, string message)>[] validations
+    ) : this(
+      name,
+      multiselectIsAllowed,
+      tooltip,
+      alreadySelectedOptionKeys,
+      dataKey,
+      isReadOnly,
+      enabledIf,
+      validations?.Cast<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>>()
+    ) {}
+
+    public DropdownSelectField(
+      string name, 
+      bool multiselectIsAllowed = false, 
+      string tooltip = null,
+      IEnumerable<string> alreadySelectedOptionKeys = null, 
+      string dataKey = null, 
+      bool isReadOnly = false, 
+      Func<DataField, View, bool> enabledIf = null,
+      IEnumerable<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>> validations = null
     ) : base(
       name,
       Enum.GetValues(typeof(TEnum)).Cast<object>().ToDictionary(e => e.ToString().ToDisplayCase()),
@@ -29,7 +49,7 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf,
-      validation
+      validations
     ) {}
   }
 
@@ -69,7 +89,7 @@ namespace Overworld.Ux.Simple {
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enabledIf = null,
-      Func<DataField, KeyValuePair<string, object>, bool> validation = null
+      params Func<DataField, KeyValuePair<string, object>, (bool success, string message)>[] validations
     ) : this(
         name,
         new Dictionary<string ,object>((optionNames ?? optionValues.Select(
@@ -81,21 +101,19 @@ namespace Overworld.Ux.Simple {
         dataKey,
         isReadOnly,
         enabledIf,
-        validation
+        validations?.AsEnumerable()
     ) {}
 
     public DropdownSelectField(
       string name,
       Dictionary<string, object> options,
-
-
       bool multiselectIsAllowed = false,
       string tooltip = null,
       IEnumerable<string> alreadySelectedOptionKeys = null,
       string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enabledIf = null,
-      Func<DataField, KeyValuePair<string, object>, bool> validation = null
+      IEnumerable<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>> validations = null
     ) : base(
       DisplayType.Dropdown,
       name,
@@ -104,7 +122,12 @@ namespace Overworld.Ux.Simple {
       dataKey,
       isReadOnly,
       enabledIf,
-      (f, v) => validation(f, (KeyValuePair<string, object>)v)
+      (validations
+        ?? Enumerable.Empty<Func<DataField, KeyValuePair<string, object>, (bool success, string message)>>())
+          .Append((f, v) => (f as DropdownSelectField)._options.TryGetValue(v.Key, out object expected) && v.Value == expected 
+            ? (true, "")
+            : (false, $"Unrecognized Select Item: {v.Key}, with value: {v.Value ?? "null"}. \n Valid Items:\n{string.Join('\n', (f as DropdownSelectField)._options.Keys.Select(key => $"\t> {key}"))}")
+          ).Select(func => func.CastMiddleType<KeyValuePair<string, object>, object>())
     ) {
       _options = options;
       MultiselectAllowed = multiselectIsAllowed;

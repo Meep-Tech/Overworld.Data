@@ -78,7 +78,7 @@ namespace Overworld.Ux.Simple {
       string name = fieldNameOverride ?? null;
       DataField.DisplayType? type = null;
       object validation = validationAttribute?._validation ?? null;
-      Func<DataField, object, bool> validationFunction = null;
+      List<Func<DataField, object, (bool, string)>> validationFunctions = new();
       string tooltipText = tooltipAttribute?._text;
       object defaultFieldValue = defaultValue?.Value;
       bool isClamped = false;
@@ -86,9 +86,14 @@ namespace Overworld.Ux.Simple {
 
       // Check if the validation points to a local method of some kind that fits what we need
       if(validation is not null && validation is string validationFunctionName) {
-        validationFunction = (f, v) => (bool)fieldInfo.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(method => method.Name == validationFunctionName)
-          .Where(method => method.GetParameters().Length == 1)
-          .Where(method => method.ReturnType == typeof(bool) || method.ReturnType == typeof((bool, string))).First().Invoke(null, new[] { f, v });
+          bool hasMessage = false;
+          var method = fieldInfo.DeclaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).Where(method => method.Name == validationFunctionName)
+            .Where(method => method.GetParameters().Length == 1)
+            .Where(method => method.ReturnType == typeof(bool) || (hasMessage = method.ReturnType == typeof((bool, string)))).First();
+        validationFunctions.Add(hasMessage 
+          ? (f, v) => ((bool, string))method.Invoke(null, new[] { f, v })
+          : (f, v) => ((bool)method.Invoke(null, new[] { f, v }), null as string)
+        );
       }
 
       // check the is enabled functionality
@@ -144,15 +149,16 @@ namespace Overworld.Ux.Simple {
         } else {
           type = DataField.DisplayType.Text;
         }
+
         isIntClamped ??= fieldType == typeof(int);
         rangeSliderData ??= new RangeSliderAttribute(0, isIntClamped.Value ? 100 : 1, isIntClamped);
 
         Func<DataField, object, bool> numericValidation = isIntClamped.Value
               ? (field, value) => int.TryParse(value as string, out int val) && (rangeValidation?.Invoke(val) ?? true)
               : (field, value) => double.TryParse(value as string, out double val) && (rangeValidation?.Invoke(val) ?? true);
-        validationFunction = validationFunction is not null
-          ? numericValidation + validationFunction
-          : numericValidation;
+        validationFunctions.Add((f,v) => numericValidation(f, v) 
+          ? (true, null) 
+          : (false, $"{v ?? "NULL"} is not a valid {(isIntClamped.Value ? "integer" : "floating point numerical")} value."));
 
         defaultFieldValue ??= 0;
       }//String
@@ -200,7 +206,7 @@ namespace Overworld.Ux.Simple {
       return DataField.Make(
         title: name ?? fieldInfo?.Name,
         type: type.Value,
-        validation: validationFunction,
+        validations: validationFunctions,
         tooltip: tooltipText,
         value: defaultFieldValue,
         enabledIf: enabled,
@@ -405,8 +411,8 @@ namespace Overworld.Ux.Simple {
       _view._tabs = new(); 
       _view._pannels = new();
       foreach((Pannel.Tab tab, Pannel pannel) in _compiledPannels) {
-        _view._tabs.Add(tab.Key, tab);
-        _view._pannels.Add(tab.Key, pannel);
+        _view._tabs.Add(tab.Key.ToLower(), tab);
+        _view._pannels.Add(tab.Key.ToLower(), pannel);
       }
       _view._fields = _fieldsByKey;
 
@@ -504,7 +510,7 @@ namespace Overworld.Ux.Simple {
           => entry is Column column
             ? column.SelectMany(_getExpandedFieldsByKey)
             : entry._getExpandedFieldsByKey()
-        ).ToDictionary(entry => entry.DataKey);
+        ).ToDictionary(entry => entry.DataKey.ToLower());
 
     static IEnumerable<DataField> _getExpandedFieldsByKey(this IUxViewElement entry) {
       return entry is Row row

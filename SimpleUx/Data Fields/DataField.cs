@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Overworld.Ux.Simple {
 
@@ -40,12 +41,11 @@ namespace Overworld.Ux.Simple {
     }
 
     /// <summary>
-    /// Used differently for different kinds of fields.
-    /// Can also be replaced with a Func that takes the current value as an object and returns a bool, or (bool success, string message) tuple to override default behaviours
+    /// Functions that take the current field, and updated object data, and validate it.
     /// </summary>
-    public object Validation {
-      get;
-    }
+    public IReadOnlyCollection<Func<DataField, object, (bool success, string message)>> Validations
+      => _validations; List<Func<DataField, object, (bool success, string message)>> _validations
+        = new();
 
     /// <summary>
     /// The current value of the field.
@@ -113,16 +113,38 @@ namespace Overworld.Ux.Simple {
     /// <param name="dataKey">Used to get the value of this field from the view</param>
     /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
     /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-    /// <param name="validation">USed differently for different fields to validate data. Can be overriden with a null, or a Func(object Value)</param>
+    /// <param name="validations">functions used to validate changes to the field.</param>
     public DataField(
       DisplayType type,
       string name,
       string tooltip = null,
       object value = null,
-      string dataKey = null, 
+      string dataKey = null,
       bool isReadOnly = false,
       Func<DataField, View, bool> enable = null,
-      Func<DataField, object, bool> validation = null
+      params Func<DataField, object, (bool success, string message)>[] validations
+    ) : this(type, name, tooltip, value, dataKey, isReadOnly, enable, validations.AsEnumerable()) {}
+
+    /// <summary>
+    /// Make a new data field for a Simple Ux.
+    /// </summary>
+    /// <param name="type">the DisplayType to use for this field</param>
+    /// <param name="name">the field name. should be unique unless you change the data key</param>
+    /// <param name="tooltip">a breif description of the field, will appear on mouse hover in the ui</param>
+    /// <param name="value">default/current value of the field</param>
+    /// <param name="dataKey">Used to get the value of this field from the view</param>
+    /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
+    /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
+    /// <param name="validations">functions used to validate changes to the field.</param>
+    protected DataField(
+        DisplayType type,
+        string name,
+        string tooltip = null,
+        object value = null,
+        string dataKey = null,
+        bool isReadOnly = false,
+        Func<DataField, View, bool> enable = null,
+        IEnumerable<Func<DataField, object, (bool success, string message)>> validations = null
     ) {
       Type = type;
       Name = name;
@@ -138,78 +160,42 @@ namespace Overworld.Ux.Simple {
       }
 
       Enable = enable ?? ((_, _) => true);
-      Validation = validation;
+      _validations = validations?.ToList();
     }
 
     /// <summary>
     /// Try to update the field value to a new one.
     /// Checks validations and returns an error message if there is one.
     /// </summary>
-    public bool TryToSetValue(object value, out string message) {
-      message = "Set Successfully";
-      switch(Type) {
-        case DisplayType.RangeSlider:
-          if(Validation?.GetType() == typeof((float, float))) {
-            double number = Math.Round(
-              double.TryParse(
-                value?.ToString() 
-                  ?? "",
-                out double d
-              )
-                ? d 
-                : 0,
-              2
-            );
-            (double min, double max) bounds = (((float, float))Validation);
-            if(number > bounds.max && number < bounds.min) {
-              message = "Number Out Of Range Bounds";
-              return false;
-            }
-            value = number;
-          }
-          break;
-        case DisplayType.Text:
-          if(Validation?.GetType() == typeof((float, float))) {
-            double number = (double)value;
-            (double min, double max) = (((float, float))Validation);
-            if(number > max && number < min) {
-              message = "Number Out Of Range Bounds";
-              return false;
-            }
-          } else if(Validation?.GetType() == typeof((int, int))) {
-            string text = (string)value;
-            (double min, double max) = (((float, float))Validation);
-            if(text.Length < min || text.Length > max) {
-              message = "String length Out Of Range Bounds";
-              return false;
-            }
-          }
-          break;
+    public virtual bool TryToSetValue(object value, out string resultMessage) {
+      resultMessage = "";
+
+      if(Validations is not null) {
+        //Default func
+        foreach((bool success, string message) in Validations.Select(validator => validator(this, value))) {
+          if(!success) {
+            resultMessage = string.IsNullOrWhiteSpace(message)
+              ? "Value did not pass custom validation functions."
+              : message;
+
+            return false;
+          } else
+            resultMessage = message;
+        }
       }
 
       /// for controller fields, that need to be validated by their parent.
       if(_controllerField is not null) {
-        var pair = (KeyValuePair<string, object>)value;
-        if(!(_controllerField.Validation as Func<KeyValuePair<string, object>, bool>)
-          (pair)) {
-          return false;
+        (object key, object value)? pair = null;
+        if(value is KeyValuePair<string, object> stringKeyedPair) {
+          pair = (stringKeyedPair.Key, stringKeyedPair.Value);
+        } else if (value is KeyValuePair<int, object> intKeyedPair) {
+          pair = (intKeyedPair.Key, intKeyedPair.Value);
         }
-
-        (_controllerField as DataFieldKeyValueSet)._update(pair);
-      }
-
-      //Default func
-      if(Validation is Func<object, bool> validate) {
-        if(!validate(value)) {
-          message = "Value did not pass custom validation functions.";
-          return false;
-        }
-      }
-      if(Validation is Func<object, (bool success, string message)> validateWithMessage) {
-        var validation = validateWithMessage(value);
-        if(!validation.success) {
-          message = validation.message;
-          return false;
+        if(pair.HasValue) {
+          if (!((_controllerField as IIndexedItemsDataField)?.TryToUpdateValueAtIndex(pair.Value.key, pair.Value.value, out resultMessage) ?? true)) {
+            return false;
+          }
         }
       }
 
@@ -224,6 +210,7 @@ namespace Overworld.Ux.Simple {
     public virtual DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
       var newField = MemberwiseClone() as DataField;
       newField.View = toNewView;
+      newField._validations = _validations?.ToList();
       newField.DefaultValue = withCurrentValuesAsNewDefaults ? Value : DefaultValue;
 
       return newField;
@@ -244,15 +231,31 @@ namespace Overworld.Ux.Simple {
     /// Some field types require attribute data.
     /// </summary>
     public static DataField Make(
+      DisplayType type,
+      string title = null,
+      string tooltip = null,
+      object value = null,
+      bool isReadOnly = false,
+      Func<DataField, View, bool> enabledIf = null,
+      string dataKey = null,
+      Dictionary<Type, Attribute> attributes = null,
+      params Func<DataField, object, (bool success, string message)>[] validations
+    ) => Make(type, title, tooltip, value, isReadOnly, enabledIf, dataKey, attributes, validations);
+
+    /// <summary>
+    /// Make a new field that fits your needs.
+    /// Some field types require attribute data.
+    /// </summary>
+    public static DataField Make(
       DisplayType type, 
       string title = null,
       string tooltip = null, 
       object value = null,
       bool isReadOnly = false,
-      Func<DataField, object, bool> validation = null,
       Func<DataField, View, bool> enabledIf = null,
       string dataKey = null,
-      Dictionary<Type, Attribute> attributes = null
+      Dictionary<Type, Attribute> attributes = null,
+      IEnumerable<Func<DataField, object, (bool success, string message)>> validations = null
     ) {
       switch(type) {
         case DisplayType.Text:
@@ -266,24 +269,26 @@ namespace Overworld.Ux.Simple {
           } else
             return new TextField(
               name: title,
-              validation: validation,
+              validations: validations?.Select(func => func.CastMiddleType<object, string>()),
               tooltip: tooltip,
               value: value,
               enabledIf: enabledIf,
               dataKey: dataKey
             );
+
         case DisplayType.Toggle:
           bool boolValue = value is bool asBool
             ? asBool
             : float.TryParse(value.ToString(), out float parsedAsFloat) && parsedAsFloat > 0;
           return new ToggleField(
             name: title,
-            validation: (f,v) => validation(f,v),
+            validations: validations?.Select(func => func.CastMiddleType<object, bool>()),
             tooltip: tooltip,
             value: boolValue,
             enabledIf: enabledIf,
             dataKey: dataKey
           );
+
         case DisplayType.RangeSlider:
           RangeSliderAttribute rangeSliderAttribute
             = attributes.TryGetValue(typeof(RangeSliderAttribute), out var foundrsa)
@@ -295,8 +300,8 @@ namespace Overworld.Ux.Simple {
             ? (rangeSliderAttribute._min, rangeSliderAttribute._max)
             : null;
 
-          float? floatValue = value is float asFloat
-            ? asFloat
+          float? floatValue = value is double asFloat
+            ? (float)asFloat
             : float.TryParse(value.ToString(), out float parsedFloat)
              ? parsedFloat
              : null;
@@ -310,19 +315,21 @@ namespace Overworld.Ux.Simple {
             value: floatValue,
             enabledIf: enabledIf,
             dataKey: dataKey,
-            validation: (f, v) => validation(f, v)
+            validations: validations?.Select(func => func.CastMiddleType<object, double>())
           );
+
         case DisplayType.KeyValueFieldList:
           return new DataFieldKeyValueSet(
             name: title,
             rows: value as Dictionary<string, object>,
-            extraEntryValidation: (f, v) => validation(f, v),
+            entryValidations: validations?.Select(func => func.CastMiddleType<object, KeyValuePair<string, object>>()),
             tooltip: tooltip,
             dataKey: dataKey,
             childFieldAttributes: attributes.Values,
             isReadOnly: isReadOnly,
             enable: enabledIf
           );
+
         case DisplayType.Dropdown:
           DropdownAttribute selectableData = attributes.TryGetValue(typeof(DropdownAttribute), out var found)
             ? found as DropdownAttribute
@@ -338,8 +345,9 @@ namespace Overworld.Ux.Simple {
             dataKey: dataKey,
             isReadOnly: isReadOnly,
             enabledIf: enabledIf,
-            validation: (f, v) => validation(f, v)
+            validations: validations?.Select(func => func.CastMiddleType<object, KeyValuePair<string, object>>())
           );
+
         case DisplayType.FieldList:
         case DisplayType.Executeable:
         case DisplayType.ColorPicker:
@@ -350,7 +358,7 @@ namespace Overworld.Ux.Simple {
           return new DataField(
             name: title,
             type: type,
-            validation: validation,
+            validations: validations,
             tooltip: tooltip,
             value: value,
             enable: enabledIf
