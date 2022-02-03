@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,16 @@ namespace Overworld.Data.IO {
     where TArchetype : Meep.Tech.Data.Archetype, IPortableArchetype {
 
     /// <summary>
+    /// Key for the name value in the config
+    /// </summary>
+    public const string NameConfigKey = "name";
+
+    /// <summary>
+    /// Key for the package name value in the config
+    /// </summary>
+    public const string PackageNameConfigKey = "packageName";
+
+    /// <summary>
     /// The default package name for archetyps of this type
     /// </summary>
     public abstract string DefaultPackageName {
@@ -21,16 +32,22 @@ namespace Overworld.Data.IO {
     }
 
     /// <summary>
-    /// The cached archetypes of this kind, by resource id
+    /// Keys that work for options for imports.
     /// </summary>
-    readonly Dictionary<string, TArchetype> _cachedResources
-      = new Dictionary<string, TArchetype>();
+    public virtual HashSet<string> ValidImportOptionKeys
+      => new() {
+        IArchetypePorter.NameOverrideSetting,
+        IArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting
+      };
 
     /// <summary>
-    /// The cached archetypes of this kind, by package name then resource id.
+    /// Valid Keys for the config.json
     /// </summary>
-    readonly Dictionary<string, Dictionary<string, TArchetype>> _cachedResourcesByPackage
-      = new();
+    public virtual HashSet<string> ValidConfigOptionKeys
+      => new() {
+        NameConfigKey,
+        PackageNameConfigKey
+      };
 
     /// <summary>
     /// The user in control of the current game, and imports.
@@ -39,6 +56,17 @@ namespace Overworld.Data.IO {
       get;
     }
 
+    /// <summary>
+    /// The cached archetypes of this kind, by resource id
+    /// </summary>
+    readonly Dictionary<string, TArchetype> _cachedResources
+      = new();
+
+    /// <summary>
+    /// The cached archetypes of this kind, by package name then resource id.
+    /// </summary>
+    readonly Dictionary<string, Dictionary<string, TArchetype>> _cachedResourcesByPackage
+      = new();
     /// <summary>
     /// Make a new type of archetype porter with inheritance
     /// </summary>
@@ -163,14 +191,7 @@ namespace Overworld.Data.IO {
          : null;
 
       string packageName = null;
-      if(!((options?.ContainsKey(IArchetypePorter.NoPackageName) ?? false) && (bool)options[IArchetypePorter.NoPackageName])) {
-        string directoryName = new DirectoryInfo(Path.GetDirectoryName(externalFileLocation)).Name;
-        if(!directoryName.StartsWith("-")) {
-          packageName = directoryName;
-        }
-      }
-
-      string resourceKey = _getNewResourceKeyFromFileNameAndSettings(externalFileLocation, packageName, ref name);
+      string resourceKey = GetResourceKeyFromFileLocationAndSettings(externalFileLocation, ref packageName, ref name);
       if(_cachedResources.ContainsKey(resourceKey)) {
         int incrementor = 0;
         string fixedKey;
@@ -216,12 +237,7 @@ namespace Overworld.Data.IO {
       }
 
       string packageName = null;
-      string directoryName = System.IO.Directory.GetParent(externalFolderLocation).Name;
-      if(!directoryName.StartsWith("-")) {
-        packageName = directoryName;
-      }
-
-      string resourceKey = _getNewResourceKeyFromFileNameAndSettings(externalFolderLocation, packageName, ref name);
+      string resourceKey = GetResourceKeyFromFileLocationAndSettings(externalFolderLocation, ref packageName, ref name);
       if(_cachedResources.ContainsKey(resourceKey)) {
         int incrementor = 0;
         string fixedKey;
@@ -262,7 +278,8 @@ namespace Overworld.Data.IO {
          : null;
 
       string defaultNameFile = externalFileLocations.First(fileName => fileName != IArchetypePorter.ConfigFileName);
-      string resourceKey = _getNewResourceKeyFromFileNameAndSettings(defaultNameFile, null, ref name);
+      string packageName = null;
+      string resourceKey = GetResourceKeyFromFileLocationAndSettings(defaultNameFile, ref packageName, ref name);
       if(_cachedResources.ContainsKey(resourceKey)) {
         int incrementor = 0;
         string fixedKey;
@@ -274,7 +291,7 @@ namespace Overworld.Data.IO {
       }
 
       IEnumerable<TArchetype> archetypes
-        = _importArchetypesFromExternalFiles(externalFileLocations, resourceKey, name, null, options);
+        = _importArchetypesFromExternalFiles(externalFileLocations, resourceKey, name, packageName, options);
 
       if(options is not null
         && options.TryGetValue(IArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting, out var moveFiles)
@@ -282,7 +299,7 @@ namespace Overworld.Data.IO {
       ) {
         foreach(TArchetype archetype in archetypes) {
           _cacheArchetype(archetype);
-          _moveFileToFinishedImportsFolder(archetype, externalFileLocations, null, options);
+          _moveFileToFinishedImportsFolder(archetype, externalFileLocations, packageName, options);
         }
       } else {
         foreach(TArchetype archetype in archetypes) {
@@ -323,9 +340,9 @@ namespace Overworld.Data.IO {
     public string GetFolderForModItem(string name, string packageName = null) {
       string modFolder = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName);
       if(packageName is null) {
-        modFolder = Path.Combine(modFolder, DefaultPackageName, name);
+        modFolder = Path.Combine(modFolder, DefaultPackageName, name.Replace(".", "/"));
       } else {
-        modFolder = Path.Combine(modFolder, packageName, DefaultPackageName, name);
+        modFolder = Path.Combine(modFolder, packageName.Replace(".", "/"), DefaultPackageName, name.Replace(".", "/"));
       }
 
       return modFolder;
@@ -363,6 +380,63 @@ namespace Overworld.Data.IO {
       string oldFolderName = GetFolderForModItem(oldName, archetype.PackageName);
       Directory.CreateDirectory(newFolderName);
       _copyDirectory(oldFolderName, newFolderName, true);
+    }
+
+    /// <summary>
+    /// Used to make a new key for a new resouce made by the current user
+    /// </summary>
+    public virtual string GetResourceKeyFromFileLocationAndSettings(string externalFileLocation, ref string packageName, ref string name) {
+      string key = "";
+      string packageFolderKey = "";
+      string nameFolderKey = "";
+      if(packageName is null || name is null) {
+        var currentFolder = new DirectoryInfo(externalFileLocation);
+
+        if(name is null) {
+          while(currentFolder.Name != DefaultPackageName) {
+            nameFolderKey = currentFolder.Name + "." + nameFolderKey;
+            currentFolder = currentFolder.Parent;
+          }
+        }
+
+        if(packageName is null
+          && currentFolder.Parent.Name != IArchetypePorter.ImportFolderName
+          && currentFolder.Parent.Name != IArchetypePorter.ModFolderName
+        ) {
+          currentFolder = currentFolder.Parent;
+          while(currentFolder.Parent.Name != IArchetypePorter.ImportFolderName
+            && currentFolder.Parent.Name != IArchetypePorter.ModFolderName) {
+            packageFolderKey = currentFolder.Name + "." + packageFolderKey;
+            currentFolder = currentFolder.Parent;
+          }
+        }
+
+        packageName ??= nameFolderKey.Trim('.');
+        name ??= nameFolderKey.Trim('.');
+      }
+
+      if(string.IsNullOrWhiteSpace(packageName)) {
+        key += packageName + "::";
+      }
+
+      return key + (name ??= Path.GetFileNameWithoutExtension(externalFileLocation));
+    }
+
+    /// <summary>
+    /// Correct package name, resource key, etc according to the config values:
+    /// </summary>
+    protected string CorrectBaseKeysAndNamesForConfigValues(string externalFileLocation, ref string name, ref string packageKey, JObject config) {
+      name = config.TryGetValue(NameConfigKey, out JToken value)
+        ? value.Value<string>()
+        : name;
+      packageKey = config.TryGetValue(PackageNameConfigKey, out JToken value2)
+        ? value2.Value<string>()
+        : packageKey;
+      return GetResourceKeyFromFileLocationAndSettings(
+         externalFileLocation,
+         ref packageKey,
+         ref name
+       );
     }
 
     static void _copyDirectory(string sourceDir, string destinationDir, bool recursive) {
@@ -406,17 +480,6 @@ namespace Overworld.Data.IO {
           }
         });
       }
-    }
-
-    /// <summary>
-    /// Used to make a new key for a new resouce made by the current user
-    /// </summary>
-    protected virtual string _getNewResourceKeyFromFileNameAndSettings(string externalFileLocation, string packageName, ref string name) {
-      string key = "";
-      if(packageName is not null) {
-        key += packageName + "::";
-      }
-      return key + (name ??= Path.GetFileNameWithoutExtension(externalFileLocation));
     }
 
     void _moveFileToFinishedImportsFolder(TArchetype compiled, string[] fileNames, string packageName = null, Dictionary<string, object> options = null) {
@@ -471,9 +534,28 @@ namespace Overworld.Data.IO {
 
     Archetype IArchetypePorter.TryToFindArchetypeAndLoadFromModFolder(string resourceKey, Dictionary<string, object> options)
       => TryToFindArchetypeAndLoadFromModFolder(resourceKey, options);
-    
+
     string[] IArchetypePorter.SerializeArchetypeToModFolder(Archetype archetype)
       => SerializeArchetypeToModFolder((TArchetype)archetype);
+
+      /// <summary>
+      /// Try to get the _config.json from the set of provided files.
+      /// </summary>
+      protected JObject TryToGetConfig(IEnumerable<string> externalFileLocations, out string configFileName) {
+        configFileName = externalFileLocations
+          .FirstOrDefault(fileName => fileName == IArchetypePorter.ConfigFileName);
+        if(configFileName is null) {
+          configFileName = externalFileLocations
+            .FirstOrDefault(fileName => Path.GetExtension(fileName).ToLower() == ".json");
+        }
+        if(configFileName is not null && File.Exists(configFileName)) {
+          return JObject.Parse(
+            File.ReadAllText(configFileName)
+          );
+        } else
+          return new JObject();
+      }
+
 
     #endregion
   }

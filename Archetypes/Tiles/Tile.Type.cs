@@ -81,11 +81,18 @@ namespace Overworld.Data {
       /// <summary>
       /// If this tile archetype should link itself to a tile when used to make that tile in the world
       /// If you don't want this archetype set as the tile's 'type' then set this to false.
+      /// This is used for Background Archetypes for tiles.
       /// </summary>
       public virtual bool LinkArchetypeToTileDataOnSet {
         get;
         internal set;
       } = true;
+
+      /// <summary>
+      /// This is used to ignore the type during re-serialization, because another type may already handle importing it via he same resource key.
+      /// </summary>
+      internal bool _ignoreDuringModReSerialization
+        = false;
 
       /// <summary>
       /// Used to make new tiles via import.

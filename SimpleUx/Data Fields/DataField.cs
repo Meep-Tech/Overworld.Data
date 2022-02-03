@@ -49,11 +49,18 @@ namespace Overworld.Ux.Simple {
 
     /// <summary>
     /// The current value of the field.
-    /// Also will be the default initial value.
     /// </summary>
     public object Value {
       get;
-      private set;
+      internal set;
+    }
+
+    /// <summary>
+    /// The default initial value.
+    /// </summary>
+    public object DefaultValue {
+      get;
+      internal set;
     }
 
     /// <summary>
@@ -120,7 +127,7 @@ namespace Overworld.Ux.Simple {
       Type = type;
       Name = name;
       Tooltip = tooltip;
-      Value = value;
+      DefaultValue = Value = value;
       IsReadOnly = isReadOnly;
       DataKey = string.IsNullOrWhiteSpace(dataKey)
         ? name
@@ -214,12 +221,19 @@ namespace Overworld.Ux.Simple {
     /// Memberwise clone to copy
     /// </summary>
     /// <returns></returns>
-    public DataField Copy(View toNewView = null) {
+    public virtual DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
       var newField = MemberwiseClone() as DataField;
       newField.View = toNewView;
+      newField.DefaultValue = withCurrentValuesAsNewDefaults ? Value : DefaultValue;
 
       return newField;
     }
+
+    /// <summary>
+    /// Reset the value of this field to it's default
+    /// </summary>
+    public void ResetValueToDefault()
+      => Value = DefaultValue;
 
     ///<summary><inheritdoc/></summary>
     IUxViewElement IUxViewElement.Copy(View toNewView)

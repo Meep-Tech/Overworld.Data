@@ -13,7 +13,7 @@ namespace Overworld.Utility {
       => Regex.Replace(@string, "(?<!^)([A-Z][a-z]|(?<=[a-z])[A-Z])", " $1").Trim('_').Replace("_", " ");
   }
 
-  public static partial class DictionaryExtensions {
+ /* public static partial class DictionaryExtensions {
 
     /// <summary>
     /// Add an item to a ICollection within a dictionary at the given key
@@ -61,5 +61,5 @@ namespace Overworld.Utility {
 
       return false;
     }
-  }
+  }*/
 }

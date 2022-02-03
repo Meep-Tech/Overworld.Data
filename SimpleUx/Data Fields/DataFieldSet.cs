@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -46,6 +47,18 @@ namespace Overworld.Ux.Simple {
     ) {
       DataType = dataType;
       _childFieldAttributes = childFieldAttributes;
+    }
+
+    ///<summary><inheritdoc/></summary>
+    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+      var value = base.Copy(toNewView, withCurrentValuesAsNewDefaults);
+      value.Value = new ArrayList((Value as ArrayList).Cast<object>().ToList());
+      value.DefaultValue = withCurrentValuesAsNewDefaults 
+        ? new ArrayList(Value as ArrayList) 
+        : new ArrayList(DefaultValue as ArrayList);
+      (value as DataFieldSet)._childFieldAttributes = _childFieldAttributes;
+
+      return value;
     }
 
     /// <summary>

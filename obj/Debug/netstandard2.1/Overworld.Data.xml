@@ -500,6 +500,12 @@
             <summary>
             If this tile archetype should link itself to a tile when used to make that tile in the world
             If you don't want this archetype set as the tile's 'type' then set this to false.
+            This is used for Background Archetypes for tiles.
+            </summary>
+        </member>
+        <member name="F:Overworld.Data.Tile.Type._ignoreDuringModReSerialization">
+            <summary>
+            This is used to ignore the type during re-serialization, because another type may already handle importing it via he same resource key.
             </summary>
         </member>
         <member name="M:Overworld.Data.Tile.Type.#ctor(System.String,System.String,System.String,UnityEngine.Tilemaps.Tile,System.Nullable{UnityEngine.Hash128},System.Nullable{System.Single})">
@@ -555,6 +561,22 @@
             The config specified import mode
             </summary>
         </member>
+        <member name="P:Overworld.Data.Tile.Porter.DefaultPackageName">
+            <summary>
+            The package name that this came from.
+            </summary>
+        </member>
+        <member name="P:Overworld.Data.Tile.Porter.ValidConfigOptionKeys">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="P:Overworld.Data.Tile.Porter.ValidImportOptionKeys">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="F:Overworld.Data.Tile.Porter.ValidImageExtensions">
+            <summary>
+            Valid image extensions
+            </summary>
+        </member>
         <member name="F:Overworld.Data.Tile.Porter.PixelsPerTileOption">
             <summary>
             option for pixels per tile.
@@ -574,14 +596,24 @@
               the generated unity tile
             </summary>
         </member>
-        <member name="F:Overworld.Data.Tile.Porter.NameConfigKey">
+        <member name="F:Overworld.Data.Tile.Porter.PixelsPerTileConfigKey">
             <summary>
-            Key for the name value in the config
+            Key for the tile diameter in pixels value in the config
             </summary>
         </member>
-        <member name="P:Overworld.Data.Tile.Porter.DefaultPackageName">
+        <member name="F:Overworld.Data.Tile.Porter.TileHeightConfigKey">
             <summary>
-            The package name that this came from.
+            Key for the tile height
+            </summary>
+        </member>
+        <member name="F:Overworld.Data.Tile.Porter.SheetSizeInTilesConfigKey">
+            <summary>
+            Key used to pass in how large the tile sheet is in tiles
+            </summary>
+        </member>
+        <member name="F:Overworld.Data.Tile.Porter.ImportModeConfigKey">
+            <summary>
+            The config key for the mode used to import the image.
             </summary>
         </member>
         <member name="M:Overworld.Data.Tile.Porter.#ctor(Overworld.Data.User)">
@@ -593,6 +625,8 @@
         <member name="M:Overworld.Data.Tile.Porter._importArchetypesFromExternalFile(System.String,System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object})">
             <summary>
             Imports the archetyps, assuming the one file is an image or config.json
+            TODO: implement just config.json upload
+            TODO: this should return two archetypes, the background and special.
             
             </summary>
             <param name="options">
@@ -607,8 +641,8 @@
             </summary>
             <param name="options">
             - PixelsPerTileOption: the pixel diameter of imported tiles.
-            - (optional) ProvidedSheetDimensionsOption: if the image is a sprite sheet, you can provide a custom number of tiles to pull from it
-            - (optional) InPlaceTileCallbackOption: Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
+            - ProvidedSheetDimensionsOption (optional): if the image is a sprite sheet, you can provide a custom number of tiles to pull from it
+            - InPlaceTileCallbackOption (optional): Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
             </param>
             <returns></returns>
         </member>
@@ -855,9 +889,34 @@
             used to im/export archetypes of a specific type from mods
             </summary>
         </member>
+        <member name="F:Overworld.Data.IO.ArchetypePorter`1.NameConfigKey">
+            <summary>
+            Key for the name value in the config
+            </summary>
+        </member>
+        <member name="F:Overworld.Data.IO.ArchetypePorter`1.PackageNameConfigKey">
+            <summary>
+            Key for the package name value in the config
+            </summary>
+        </member>
         <member name="P:Overworld.Data.IO.ArchetypePorter`1.DefaultPackageName">
             <summary>
             The default package name for archetyps of this type
+            </summary>
+        </member>
+        <member name="P:Overworld.Data.IO.ArchetypePorter`1.ValidImportOptionKeys">
+            <summary>
+            Keys that work for options for imports.
+            </summary>
+        </member>
+        <member name="P:Overworld.Data.IO.ArchetypePorter`1.ValidConfigOptionKeys">
+            <summary>
+            Valid Keys for the config.json
+            </summary>
+        </member>
+        <member name="P:Overworld.Data.IO.ArchetypePorter`1.CurrentUser">
+            <summary>
+            The user in control of the current game, and imports.
             </summary>
         </member>
         <member name="F:Overworld.Data.IO.ArchetypePorter`1._cachedResources">
@@ -868,11 +927,6 @@
         <member name="F:Overworld.Data.IO.ArchetypePorter`1._cachedResourcesByPackage">
             <summary>
             The cached archetypes of this kind, by package name then resource id.
-            </summary>
-        </member>
-        <member name="P:Overworld.Data.IO.ArchetypePorter`1.CurrentUser">
-            <summary>
-            The user in control of the current game, and imports.
             </summary>
         </member>
         <member name="M:Overworld.Data.IO.ArchetypePorter`1.#ctor(Overworld.Data.User)">
@@ -965,9 +1019,19 @@
             <inheritdoc/>
             </summary>
         </member>
-        <member name="M:Overworld.Data.IO.ArchetypePorter`1._getNewResourceKeyFromFileNameAndSettings(System.String,System.String,System.String@)">
+        <member name="M:Overworld.Data.IO.ArchetypePorter`1.GetResourceKeyFromFileLocationAndSettings(System.String,System.String@,System.String@)">
             <summary>
             Used to make a new key for a new resouce made by the current user
+            </summary>
+        </member>
+        <member name="M:Overworld.Data.IO.ArchetypePorter`1.CorrectBaseKeysAndNamesForConfigValues(System.String,System.String@,System.String@,Newtonsoft.Json.Linq.JObject)">
+            <summary>
+            Correct package name, resource key, etc according to the config values:
+            </summary>
+        </member>
+        <member name="M:Overworld.Data.IO.ArchetypePorter`1.TryToGetConfig(System.Collections.Generic.IEnumerable{System.String},System.String@)">
+            <summary>
+            Try to get the _config.json from the set of provided files.
             </summary>
         </member>
         <member name="T:Overworld.Data.IArchetypePorter">
@@ -998,12 +1062,6 @@
         <member name="F:Overworld.Data.IArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting">
             <summary>
             Option parameter to Move the imported files to the finished imports folder.
-            Accepts a bool
-            </summary>
-        </member>
-        <member name="F:Overworld.Data.IArchetypePorter.NoPackageName">
-            <summary>
-            Option parameter to indicate there's no package name
             Accepts a bool
             </summary>
         </member>
@@ -1087,26 +1145,6 @@
         <member name="M:Overworld.Utility.StringExtensions.ToDisplayCase(System.String)">
             <summary>
             Make a string from "CamelCase" to "Display Case"
-            </summary>
-        </member>
-        <member name="M:Overworld.Utility.DictionaryExtensions.AddToValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:Overworld.Utility.DictionaryExtensions.ValueCollectionContains``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:Overworld.Utility.DictionaryExtensions.AddToHashSet``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.HashSet{``1}},``0,``1)">
-            <summary>
-            Add an item to a ICollection within a dictionary at the given key
-            </summary>
-        </member>
-        <member name="M:Overworld.Utility.DictionaryExtensions.RemoveFromValueCollection``2(System.Collections.Generic.IDictionary{``0,System.Collections.Generic.ICollection{``1}},``0,``1)">
-            <summary>
-            Remove an item from an ICollection within a dictionary at the given key
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.CannotBeNegative">
@@ -1244,7 +1282,11 @@
         <member name="P:Overworld.Ux.Simple.DataField.Value">
             <summary>
             The current value of the field.
-            Also will be the default initial value.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField.DefaultValue">
+            <summary>
+            The default initial value.
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DataField.IsReadOnly">
@@ -1293,11 +1335,16 @@
             Checks validations and returns an error message if there is one.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.Copy(Overworld.Ux.Simple.View)">
+        <member name="M:Overworld.Ux.Simple.DataField.Copy(Overworld.Ux.Simple.View,System.Boolean)">
             <summary>
             Memberwise clone to copy
             </summary>
             <returns></returns>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField.ResetValueToDefault">
+            <summary>
+            Reset the value of this field to it's default
+            </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataField.Overworld#Ux#Simple#IUxViewElement#Copy(Overworld.Ux.Simple.View)">
             <summary><inheritdoc/></summary>
@@ -1336,6 +1383,9 @@
             </summary>
             <param name="extraEntryValidation">Add validation other than the built in key validation</param>
             <param name="childFieldAttributes">Add attributes to each generated child input</param>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._update(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
             <summary>
@@ -1401,6 +1451,9 @@
             <param name="childFieldAttributes">Add attributes to each generated child input</param>
             <param name="rowValues">The default/current list values</param>
         </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="M:Overworld.Ux.Simple.DataFieldSet._update(System.Collections.Generic.KeyValuePair{System.Int32,System.Object})">
             <summary>
             Used to update the colletction
@@ -1414,6 +1467,11 @@
         <member name="M:Overworld.Ux.Simple.DataFieldSet._remove(System.Int32)">
             <summary>
             remove the item at the collection index
+            </summary>
+        </member>
+        <member name="T:Overworld.Ux.Simple.DropdownSelectField`1">
+            <summary>
+            A drop down that can select enum values
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.DropdownSelectField">
@@ -1435,6 +1493,9 @@
             <summary>
             The value(s) selected.
             </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DropdownSelectField.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="T:Overworld.Ux.Simple.RangeSliderField">
             <summary>
@@ -1471,11 +1532,6 @@
         <member name="T:Overworld.Ux.Simple.ToggleField">
             <summary>
             A boolean toggle specific Simple Ux Field.
-            </summary>
-        </member>
-        <member name="P:Overworld.Ux.Simple.ToggleField.PlaceholderText">
-            <summary>
-            Placeholder text for the input
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.IUxViewElement">
@@ -1669,6 +1725,11 @@
             A simple ux view, with controls, and potentially with multiple pannels that contain content.
             </summary>
         </member>
+        <member name="P:Overworld.Ux.Simple.View.Id">
+            <summary>
+            The unique id of this view
+            </summary>
+        </member>
         <member name="P:Overworld.Ux.Simple.View.Context">
             <summary>
             Extra context you can provide to the component.
@@ -1761,7 +1822,7 @@
         </member>
         <member name="M:Overworld.Ux.Simple.View.Copy">
             <summary>
-            Copy this view layout and current values.
+            Copy this view layout and current values to a brand new view with a new id.
             </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.View.GetEnumerator">

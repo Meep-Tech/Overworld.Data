@@ -24,7 +24,7 @@ namespace Overworld.Data {
     /// The finished imports folder name.
     /// </summary>
     public const string FinishedImportsFolderName
-      = "__exports";
+      = "__processed_imports";
 
     /// <summary>
     /// Option parameter to override the object name
@@ -38,13 +38,6 @@ namespace Overworld.Data {
     /// </summary>
     public const string MoveFinishedFilesToFinishedImportsFolderSetting
       = "MoveImportedFilesToFinished";
-
-    /// <summary>
-    /// Option parameter to indicate there's no package name
-    /// Accepts a bool
-    /// </summary>
-    public const string NoPackageName
-      = "NoPackageName";
 
     /// <summary>
     /// The name of the config json file.

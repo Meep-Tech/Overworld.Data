@@ -6,13 +6,6 @@ namespace Overworld.Ux.Simple {
   /// </summary>
   public class ToggleField : DataField {
 
-    /// <summary>
-    /// Placeholder text for the input
-    /// </summary>
-    public string PlaceholderText {
-      get;
-    }
-
     public ToggleField(
       string name,
       string tooltip = null, 

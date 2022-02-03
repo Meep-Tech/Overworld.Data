@@ -65,6 +65,16 @@ namespace Overworld.Ux.Simple {
       _childFieldAttributes = childFieldAttributes;
     }
 
+    ///<summary><inheritdoc/></summary>
+    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+      var value = base.Copy(toNewView, withCurrentValuesAsNewDefaults);
+      value.Value = new Dictionary<string, object>(Value);
+      value.DefaultValue = withCurrentValuesAsNewDefaults ? new Dictionary<string, object>(Value) : new Dictionary<string, object>((IDictionary<string, object>)DefaultValue);
+      (value as DataFieldSet)._childFieldAttributes = _childFieldAttributes;
+
+      return value;
+    }
+
     /// <summary>
     /// Used to update the colletction
     /// </summary>

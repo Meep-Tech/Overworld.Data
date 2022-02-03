@@ -211,7 +211,8 @@ namespace Overworld.Ux.Simple {
           validationAttribute,
           enabledAttribute,
           rangeSliderData
-        }.ToDictionary(attribute => attribute.GetType()),
+        }.Where(attribute => attribute is not null)
+          .ToDictionary(attribute => attribute.GetType()),
         dataKey: fieldDataKeyOverride
       );
     }

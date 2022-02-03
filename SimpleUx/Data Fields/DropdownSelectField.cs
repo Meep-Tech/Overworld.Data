@@ -6,6 +6,34 @@ using System.Linq;
 namespace Overworld.Ux.Simple {
 
   /// <summary>
+  /// A drop down that can select enum values
+  /// </summary>
+  public class DropdownSelectField<TEnum> : DropdownSelectField
+    where TEnum : Enum {
+
+    public DropdownSelectField(
+      string name, 
+      bool multiselectIsAllowed = false, 
+      string tooltip = null,
+      IEnumerable<string> alreadySelectedOptionKeys = null, 
+      string dataKey = null, 
+      bool isReadOnly = false, 
+      Func<DataField, View, bool> enabledIf = null,
+      Func<DataField, KeyValuePair<string, object>, bool> validation = null
+    ) : base(
+      name,
+      Enum.GetValues(typeof(TEnum)).Cast<object>().ToDictionary(e => e.ToString().ToDisplayCase()),
+      multiselectIsAllowed,
+      tooltip,
+      alreadySelectedOptionKeys,
+      dataKey,
+      isReadOnly,
+      enabledIf,
+      validation
+    ) {}
+  }
+
+  /// <summary>
   /// A drop down that can select values
   /// </summary>
   public class DropdownSelectField : DataField {
@@ -54,12 +82,13 @@ namespace Overworld.Ux.Simple {
         isReadOnly,
         enabledIf,
         validation
-    ) {
-    }
+    ) {}
 
     public DropdownSelectField(
       string name,
       Dictionary<string, object> options,
+
+
       bool multiselectIsAllowed = false,
       string tooltip = null,
       IEnumerable<string> alreadySelectedOptionKeys = null,
@@ -79,6 +108,16 @@ namespace Overworld.Ux.Simple {
     ) {
       _options = options;
       MultiselectAllowed = multiselectIsAllowed;
+    }
+
+    ///<summary><inheritdoc/></summary>
+    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+      var value = base.Copy(toNewView, withCurrentValuesAsNewDefaults);
+      value.Value = Value.ToList();
+      value.DefaultValue = withCurrentValuesAsNewDefaults ? Value.ToList() : (DefaultValue as List<KeyValuePair<string, object>>).ToList();
+      (value as DropdownSelectField)._options = new(_options);
+
+      return value;
     }
   }
 }

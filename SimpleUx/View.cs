@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Data;
 using Meep.Tech.Data.Utility;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,13 @@ namespace Overworld.Ux.Simple {
     internal OrderedDictionary<string, Pannel.Tab> _tabs
       = new();
     internal IReadOnlyDictionary<string, DataField> _fields;
+
+    /// <summary>
+    /// The unique id of this view
+    /// </summary>
+    public string Id {
+      get;
+    } = new Guid().ToString();
 
     /// <summary>
     /// Extra context you can provide to the component.
@@ -86,19 +94,19 @@ namespace Overworld.Ux.Simple {
     /// Get the pannel at the given tab
     /// </summary>
     public Pannel.Tab GetTab(string key)
-      => _tabs[key];
+      => _tabs[key.ToLower()];
 
     /// <summary>
     /// Get a field by key
     /// </summary>
     public DataField GetField(string key)
-      => _fields[key];
+      => _fields[key.ToLower()];
 
     /// <summary>
     /// try to get a field by key
     /// </summary>
     public DataField TryToGetField(string key)
-      => _fields.TryGetValue(key, out var value)
+      => _fields.TryGetValue(key.ToLower(), out var value)
        ? value
        : null;
 
@@ -106,19 +114,19 @@ namespace Overworld.Ux.Simple {
     /// try to get a field by key
     /// </summary>
     public bool TryToGetField(string key, out DataField field)
-      => _fields.TryGetValue(key, out field);
+      => _fields.TryGetValue(key.ToLower(), out field);
 
     /// <summary>
     /// Get a field value by key
     /// </summary>
     public object GetFieldValue(string key)
-      => _fields[key].Value;
+      => _fields[key.ToLower()].Value;
 
     /// <summary>
     /// Get a field value by key
     /// </summary>
     public TValue GetFieldValue<TValue>(string key)
-      => (TValue)_fields[key].Value;
+      => (TValue)_fields[key.ToLower()].Value;
 
     /// <summary>
     /// Try to Get a field value by key
@@ -147,7 +155,7 @@ namespace Overworld.Ux.Simple {
       => (TValue)((DataFieldKeyValueSet)GetField(fieldKey)).Value[valueKey];
 
     /// <summary>
-    /// Copy this view layout and current values.
+    /// Copy this view layout and current values to a brand new view with a new id.
     /// </summary>
     public View Copy() {
       OrderedDictionary<string, Pannel> newPannelDic = new();
@@ -165,7 +173,7 @@ namespace Overworld.Ux.Simple {
       _fields = newPannelDic.Values
         .SelectMany(pannel => pannel.Elements._getExpandedFieldsByKey())
         .ToDictionary(
-          e => e.Key,
+          e => e.Key.ToLower(),
           e => e.Value
         );
 
