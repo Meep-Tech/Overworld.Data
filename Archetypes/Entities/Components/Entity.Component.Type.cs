@@ -1,7 +1,8 @@
 ﻿using Meep.Tech.Data;
-using Overworld.Ux.Simple;
+using Simple.Ux.Data;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -55,15 +56,22 @@ namespace Overworld.Data {
             /// Check for fields we should include by default:
             Entites.Components.ShowInOverworldEditorAttribute includeAttribute
               = member.GetCustomAttribute<Entites.Components.ShowInOverworldEditorAttribute>();
+         
             if(member is FieldInfo field && (field.IsPublic || includeAttribute is not null)) {
               DataField builtField 
-                = componentArchetype.BuildDefaultField(field, includeAttribute);
+                = ViewBuilder.BuildDefaultField(field, includeAttribute is not null ? new Dictionary<System.Type, Attribute> {
+                  { typeof(ReadOnlyAttribute),  new ReadOnlyAttribute(includeAttribute.IsReadOnly) },
+                  { typeof(DisplayNameAttribute),  new DisplayNameAttribute(includeAttribute.Name ?? field.Name) }
+                } : null);
               if(builtField is not null) {
                 builder.AddField(builtField);
               }
             } else if(member is PropertyInfo prop && (prop.GetMethod.IsPublic || includeAttribute is not null)) {
-              DataField builtField 
-                =componentArchetype.BuildDefaultField(prop, includeAttribute);
+              DataField builtField
+                = ViewBuilder.BuildDefaultField(prop, includeAttribute is not null ? new Dictionary<System.Type, Attribute> {
+                  { typeof(ReadOnlyAttribute),  new ReadOnlyAttribute(includeAttribute.IsReadOnly) },
+                  { typeof(DisplayNameAttribute),  new DisplayNameAttribute(includeAttribute.Name ?? prop.Name) }
+                } : null);
               if(builtField is not null) {
                 builder.AddField(builtField);
               }
@@ -72,40 +80,6 @@ namespace Overworld.Data {
 
           return builder;
         };
-
-        /// <summary>
-        /// Build a default Ux field for an entity component using the field
-        /// </summary>
-        public DataField BuildDefaultField(FieldInfo field, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
-          DataField builtField = ViewBuilder.BuildDefaultField(field);
-          if(field is null) {
-            return null;
-          }
-          if(includeAttribute is not null) {
-            if(includeAttribute.IsReadOnly) {
-              builtField.IsReadOnly = true;
-            }
-          }
-
-          return builtField;
-        }
-
-        /// <summary>
-        /// Build a default Ux field for an entity component using the property
-        /// </summary>
-        public DataField BuildDefaultField(PropertyInfo prop, Entites.Components.ShowInOverworldEditorAttribute includeAttribute = null) {
-          DataField field = ViewBuilder.BuildDefaultField(prop);
-          if(field is null) {
-            return null;
-          }
-
-          if(includeAttribute is not null) {
-            field.IsReadOnly = prop.CanWrite && !includeAttribute.IsReadOnly;
-          } else if (field is not null)
-            field.IsReadOnly = prop.CanWrite && prop.SetMethod.IsPublic;
-
-          return field;
-        }
 
         /// <summary>
         /// Get the base editor UX for this type of component.

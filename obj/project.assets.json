@@ -45,6 +45,19 @@
         "runtime": {
           "bin/placeholder/Meep.Tech.Data.dll": {}
         }
+      },
+      "Simple.Ux.Data/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.1",
+        "dependencies": {
+          "Meep.Tech.Data": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Simple.Ux.Data.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Simple.Ux.Data.dll": {}
+        }
       }
     }
   },
@@ -190,11 +203,17 @@
       "type": "project",
       "path": "../../../ECSBAM/Meep.Tech.Data/Meep.Tech.Data.csproj",
       "msbuildProject": "../../../ECSBAM/Meep.Tech.Data/Meep.Tech.Data.csproj"
+    },
+    "Simple.Ux.Data/1.0.0": {
+      "type": "project",
+      "path": "../../Simple.Ux.Data/Simple.Ux.Data.csproj",
+      "msbuildProject": "../../Simple.Ux.Data/Simple.Ux.Data.csproj"
     }
   },
   "projectFileDependencyGroups": {
     ".NETStandard,Version=v2.1": [
-      "Meep.Tech.Data >= 1.0.0"
+      "Meep.Tech.Data >= 1.0.0",
+      "Simple.Ux.Data >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -231,6 +250,9 @@
           "projectReferences": {
             "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.Data.csproj": {
               "projectPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\ECSBAM\\Meep.Tech.Data\\Meep.Tech.Data.csproj"
+            },
+            "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\_games\\Simple.Ux.Data\\Simple.Ux.Data.csproj": {
+              "projectPath": "C:\\Users\\super\\Projects\\meep-tech\\libraries\\c-sharp\\_games\\Simple.Ux.Data\\Simple.Ux.Data.csproj"
             }
           }
         }

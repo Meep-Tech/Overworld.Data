@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\ECSBAM\Meep.Tech.Data\Meep.Tech.Data.csproj" />
+    <ProjectReference Include="..\..\Simple.Ux.Data\Simple.Ux.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>

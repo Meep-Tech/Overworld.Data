@@ -68,15 +68,16 @@ namespace Overworld.Data {
       /// </summary>
       /// <param name="ux">The ux for this component</param>
       /// <param name="updatedFieldKey">(optional) a field that was changed.</param>
-      protected void UpdateFromFieldChange(Ux.Simple.View ux, string updatedFieldKey = null) {
-        if(updatedFieldKey is not null && ux._fields.TryGetValue(updatedFieldKey, out var found)) {
-          if(updatedFieldKey.Contains(':')) {
-            var parts = updatedFieldKey.Split(':');
+      /// TODO: cache these functions.
+      protected void UpdateFromFieldChange(Simple.Ux.Data.View ux, string updatedFieldKey = null) {
+        if(updatedFieldKey is not null && ux.TryToGetField(updatedFieldKey, out var found)) {
+          if(updatedFieldKey.Contains("::")) {
+            var parts = updatedFieldKey.Split("::");
             ((this.GetType().GetMember(parts[0]).First() as PropertyInfo).GetValue(this) as IDictionary)[parts[0]]
-              = ux._fields[updatedFieldKey].Value;
+              = found.Value;
           } else
             (this.GetType().GetMember(updatedFieldKey).First() as PropertyInfo)
-              .SetValue(this, ux._fields[updatedFieldKey].Value);
+              .SetValue(this, found.Value);
         }
       } 
     }
