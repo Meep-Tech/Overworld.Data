@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Overworld.Utility;
 
 namespace Overworld.Ux.Simple {
 
@@ -159,7 +160,7 @@ namespace Overworld.Ux.Simple {
     /// </summary>
     public virtual bool TryToSetValue(object value, out string resultMessage) {
       var oldValue = Value;
-      resultMessage = "Successfuly Set Value!";
+      resultMessage = "Success!";
 
       /// for controller fields, that need to be validated by their parent.
       if(_controllerField is not null) {
@@ -235,7 +236,7 @@ namespace Overworld.Ux.Simple {
     /// Make a new field that fits your needs.
     /// Some field types require attribute data.
     /// </summary>
-    public static DataField Make(
+    public static DataField MakeDefault(
       DisplayType type,
       string title = null,
       string tooltip = null,
@@ -256,16 +257,21 @@ namespace Overworld.Ux.Simple {
               tooltip: tooltip,
               text: value,
               dataKey: dataKey
-            );
+            ) {
+              HideIfCheckers = hiddenIf
+            };
           } else
             return new TextField(
               name: title,
-              validations: validations?.Select(func => func.CastMiddleType<object, string>()),
               tooltip: tooltip,
               value: value,
-              enabledIf: enabledIf,
               dataKey: dataKey
-            );
+            ){
+              EnabledIfCheckers = enabledIf,
+              HideIfCheckers = hiddenIf,
+              Validations = validations.ReDelegate(func => func.CastMiddleType<object, string>()),
+              OnValueChangedListeners = onValueChanged.ReDelegate(func => func.CastEndType<object, string>())
+            };
 
         case DisplayType.Toggle:
           bool boolValue = value is bool asBool
@@ -273,12 +279,15 @@ namespace Overworld.Ux.Simple {
             : float.TryParse(value.ToString(), out float parsedAsFloat) && parsedAsFloat > 0;
           return new ToggleField(
             name: title,
-            validations: validations?.Select(func => func.CastMiddleType<object, bool>()),
             tooltip: tooltip,
             value: boolValue,
-            enabledIf: enabledIf,
             dataKey: dataKey
-          );
+          ) {
+            EnabledIfCheckers = enabledIf,
+            HideIfCheckers = hiddenIf,
+            Validations = validations.ReDelegate(func => func.CastMiddleType<object, bool>()),
+            OnValueChangedListeners = onValueChanged.ReDelegate(func => func.CastEndType<object, bool>())
+          };
 
         case DisplayType.RangeSlider:
           RangeSliderAttribute rangeSliderAttribute
@@ -304,22 +313,28 @@ namespace Overworld.Ux.Simple {
             clampedToWholeNumbers: clamped,
             tooltip: tooltip,
             value: floatValue,
-            enabledIf: enabledIf,
-            dataKey: dataKey,
-            validations: validations?.Select(func => func.CastMiddleType<object, double>())
-          );
+            dataKey: dataKey
+          ) {
+            EnabledIfCheckers = enabledIf,
+            HideIfCheckers = hiddenIf,
+            Validations = validations.ReDelegate(func => func.CastMiddleType<object, double>()),
+            OnValueChangedListeners = onValueChanged.ReDelegate(func => func.CastEndType<object, double>())
+          };
 
         case DisplayType.KeyValueFieldList:
           return new DataFieldKeyValueSet(
             name: title,
             rows: value as Dictionary<string, object>,
-            entryValidations: validations?.Select(func => func.CastMiddleType<object, KeyValuePair<string, object>>()),
             tooltip: tooltip,
             dataKey: dataKey,
             childFieldAttributes: attributes.Values,
-            isReadOnly: isReadOnly,
-            enable: enabledIf
-          );
+            isReadOnly: isReadOnly
+          ) {
+            EnabledIfCheckers = enabledIf,
+            HideIfCheckers = hiddenIf,
+            EntryValidations = validations.ReDelegate(func => func.CastMiddleType<object, KeyValuePair<string, object>>()),
+            OnValueChangedListeners = onValueChanged.ReDelegate(func => func.CastEndType<object, OrderedDictionary<string, object>>())
+          };
 
         case DisplayType.Dropdown:
           DropdownAttribute selectableData = attributes.TryGetValue(typeof(DropdownAttribute), out var found)
@@ -337,7 +352,9 @@ namespace Overworld.Ux.Simple {
             isReadOnly: isReadOnly
           ) {
             EnabledIfCheckers = enabledIf,
-            Validations = validations
+            HideIfCheckers = hiddenIf,
+            Validations = validations.ReDelegate(func => func.CastMiddleType<object, List<KeyValuePair<string, object>>>()),
+            OnValueChangedListeners = onValueChanged.ReDelegate(func => func.CastEndType<object, List<KeyValuePair<string, object>>>())
           };
 
         case DisplayType.FieldList:
@@ -356,20 +373,6 @@ namespace Overworld.Ux.Simple {
   /// A data field for input or display in a simple ux pannel/view
   /// </summary>
   public abstract class DataField<TValue> : DataField {
-
-    /// <summary>
-    /// The value(s) selected.
-    /// </summary>
-    public new TValue Value {
-      get => (TValue)base.Value;
-      protected set => base.Value = value;
-    }
-
-    /// <summary>
-    /// For making new datafield types
-    /// </summary>
-    protected DataField(DisplayType type, string name, string tooltip = null, object value = null, string dataKey = null, bool isReadOnly = false) 
-      : base(type, name, tooltip, value, dataKey, isReadOnly) {}
 
     /// <summary>
     /// Actions to be executed on change.
@@ -404,11 +407,38 @@ namespace Overworld.Ux.Simple {
       private set;
     } = new();
 
+    /// <summary>
+    /// The value(s) selected.
+    /// </summary>
+    public new TValue Value {
+      get => (TValue)base.Value;
+      protected set => base.Value = value;
+    }
+
+    /// <summary>
+    /// For making new datafield types
+    /// </summary>
+    protected DataField(DisplayType type, string name, string tooltip = null, object value = null, string dataKey = null, bool isReadOnly = false)
+      : base(type, name, tooltip, value, dataKey, isReadOnly) { }
+
+    ///<summary><inheritdoc/></summary>
+    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+      var newField = base.Copy(toNewView, withCurrentValuesAsNewDefaults) as DataField<TValue>;
+      newField.DefaultValidations = new(Validations);
+      newField.DefaultOnValueChangedListeners = new(DefaultOnValueChangedListeners);
+
+      return newField;
+    }
+
     ///<summary><inheritdoc/></summary>
     protected override bool RunValidationsOn(object value, out string resultMessage) {
       resultMessage = "Value Is Valid! :D";
+      TValue convertedValue = (TValue)value;
+
       if(Validations.Any()) {
-        foreach((bool success, string message) in Validations.Select(validator => validator.Value(this, value))) {
+        foreach((bool success, string message) in Validations.Select(validator => {
+          return validator.Value(this, convertedValue);
+        })) {
           if(!success) {
             resultMessage = string.IsNullOrWhiteSpace(message)
               ? "Value did not pass custom validation functions."
@@ -426,14 +456,5 @@ namespace Overworld.Ux.Simple {
     internal override void _runOnValueChangedCallbacks(DataField updatedField, object oldValue)
       => OnValueChangedListeners
         .ForEach(listener => listener.Value(this, (TValue)oldValue));
-
-    ///<summary><inheritdoc/></summary>
-    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
-      var newField = base.Copy(toNewView, withCurrentValuesAsNewDefaults) as DataField<TValue>;
-      newField.DefaultValidations = new(Validations);
-      newField.DefaultOnValueChangedListeners = new(DefaultOnValueChangedListeners);
-
-      return newField;
-    }
   }
 }

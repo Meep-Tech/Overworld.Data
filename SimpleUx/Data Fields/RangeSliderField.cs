@@ -70,9 +70,4 @@ namespace Overworld.Ux.Simple {
       return base.TryToSetValue(value, out message);
     }
   }
-
-  /*internal static class FuncExtensions {
-    internal static Func<DataField, TTo, (bool, string)> CastMiddleType<TFrom, TTo>(this Func<DataField, TFrom, (bool, string)> from)
-      => (f, v) => from(f, v is TFrom fromType ? fromType : throw new Exception($"Cannot cast from {typeof(TTo).FullName}[TTo] to {typeof(TFrom).FullName}[TFrom]."));
-  }*/
 }

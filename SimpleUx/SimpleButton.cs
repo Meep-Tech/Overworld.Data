@@ -3,36 +3,37 @@
 namespace Overworld.Ux.Simple {
 
   /// <summary>
-  /// Represents a simple button in a ui
+  /// Represents a simple clickable button in a ui.
+  /// You can add more onClick callbacks via the OnValueChangeListeners callbacks.
   /// </summary>
-  public class SimpleButton : DataField {
+  public class SimpleButton : DataField<Overworld.Data.Executeable> {
 
     /// <summary>
     /// Make a clickable UI button that does something on click.
+    /// You can add more onClick callbacks via the OnValueChangedListeners callbacks.
     /// </summary>
     public SimpleButton(
       string name,
-      Overworld.Data.Executeable onClick,
       string tooltip = null,
       string dataKey = null,
       bool isReadOnly = false,
-      Func<DataField, View, bool> enable = null
+      Overworld.Data.Executeable onClick = null
     ) : base(
       DisplayType.Button,
       name,
       tooltip,
       onClick, 
       dataKey,
-      isReadOnly,
-      enable,
-      null
+      isReadOnly
     ) {}
 
     /// <summary>
     /// Used to update the colletction
+    /// You can add more onClick callbacks via the OnValueChangedListeners callbacks.
     /// </summary>
     public void Click() {
-      ///onClick.Execute();
+      Value?.Execute();
+      TryToSetValue(Value, out _);
     }
   }
 }

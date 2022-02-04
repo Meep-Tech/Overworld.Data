@@ -57,7 +57,7 @@ namespace Overworld.Ux.Simple {
       object oldValue = this[key];
       try {
         this[key] = newValue;
-        if(!RunValidationsOn(newValue, out resultMessage)) {
+        if(!RunValidationsOn(Value, out resultMessage)) {
           this[key] = oldValue;
           return false;
         }

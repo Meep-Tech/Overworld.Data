@@ -718,6 +718,11 @@
             </summary>
             <param name="id"></param>
         </member>
+        <member name="M:Overworld.Data.Executeable.Execute">
+            <summary>
+            Execute this with the internal program and context.
+            </summary>
+        </member>
         <member name="M:Overworld.Data.CardinalDirectionExtensions.TurnClockwise(Overworld.Data.World.CardinalDirection)">
             <summary>
             Get the direction if you turn clockwise 90 degrees from this one.
@@ -1142,7 +1147,7 @@
             This returns false if the file exists already, meaning there's already an archetype with the given key.
             </summary>
         </member>
-        <member name="M:Overworld.Utility.StringExtensions.ToDisplayCase(System.String)">
+        <member name="M:Overworld.Utility.Extensions.ToDisplayCase(System.String)">
             <summary>
             Make a string from "CamelCase" to "Display Case"
             </summary>
@@ -1253,6 +1258,68 @@
         <member name="M:Overworld.Ux.Simple.Column.Overworld#Ux#Simple#IUxViewElement#Copy(Overworld.Ux.Simple.View)">
             <summary><inheritdoc/></summary>
         </member>
+        <member name="T:Overworld.Ux.Simple.CollectionOfDataFields`2">
+            <summary>
+            The base class for a data field that's actually a group/collection of fields.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.CollectionOfDataFields`2.ChildFieldAttributes">
+            <summary>
+            Attributes that are applied to each child field.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.CollectionOfDataFields`2.EntryValidations">
+            <summary>
+            Extra validation to use on an individual entry whenever one is changed.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.CollectionOfDataFields`2.DefaultEntryValidations">
+            <summary>
+            The default entry validations for this type.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.CollectionOfDataFields`2.Item(`0)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Collections.Generic.IEnumerable{System.Attribute})">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.TryToUpdateValueAtIndex(`0,System.Object,System.String@)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.RunEntryValidationsOn(`0,System.Object,System.String@)">
+            <summary>
+            used to run validations on an entry added to a collection field.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.TryToRemoveLastEntry(System.String@)">
+            <summary>
+            try to remove the last item from the collection
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.TryToRemoveEntryAt(System.String,System.String@)">
+            <summary>
+            remove the item at the collection index
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.TryToAppendNewEntry(System.String,System.Object,System.String@)">
+            <summary>
+            Try to add a new entry to the end of this list.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2.TryToAppendNewEmptyEntry(System.String@)">
+            <summary>
+            Try to add a new empty entry to the end of this list.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.CollectionOfDataFields`2._copyValueAndDefaults(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary>
+             Implimentation needed to complete to Copy function.
+            </summary>
+        </member>
         <member name="T:Overworld.Ux.Simple.DataField">
             <summary>
             A data field for input or display in a simple ux pannel/view
@@ -1273,26 +1340,26 @@
             The type of display this field should use.
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataField.OnChangeListeners">
+        <member name="P:Overworld.Ux.Simple.DataField.EnabledIfCheckers">
             <summary>
-            Actions to be executed on change.
-            Takes the current field, and the old value.
+            Functions that check if the current field should be enabled.
+            Called when another field in the same view is updated, or Update is called on the view.
             </summary>
         </member>
-        <member name="F:Overworld.Ux.Simple.DataField.DefaultOnChangeListenerName">
+        <member name="P:Overworld.Ux.Simple.DataField.DefaultEnabledIfCheckers">
             <summary>
-            The key used for OnChangeListeners when you set OnChangeListener via Init
+            Default enable if checkers added to the field.
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataField.OnChangeListener">
+        <member name="P:Overworld.Ux.Simple.DataField.HideIfCheckers">
             <summary>
-            Action to be executed on change.
-            Sets this under the DefaultOnChangeListenerName key in OnChangeListeners
+            Functions that check if the current field should be hidden.
+            Called when another field in the same view is updated, or Update is called on the view.
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataField.Validations">
+        <member name="P:Overworld.Ux.Simple.DataField.DefaultHideIfCheckers">
             <summary>
-            Functions that take the current field, and updated object data, and validate it.
+            Default hide if checkers added to the field.
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DataField.Value">
@@ -1327,12 +1394,7 @@
             Info tooltip for the field
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataField.Enable">
-            <summary>
-            Used to determine if the field should be enabled.
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}[])">
+        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean)">
             <summary>
             Make a new data field for a Simple Ux.
             </summary>
@@ -1342,26 +1404,16 @@
             <param name="value">default/current value of the field</param>
             <param name="dataKey">Used to get the value of this field from the view</param>
             <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
-            <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-            <param name="validations">functions used to validate changes to the field.</param>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataField.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}})">
-            <summary>
-            Make a new data field for a Simple Ux.
-            </summary>
-            <param name="type">the DisplayType to use for this field</param>
-            <param name="name">the field name. should be unique unless you change the data key</param>
-            <param name="tooltip">a breif description of the field, will appear on mouse hover in the ui</param>
-            <param name="value">default/current value of the field</param>
-            <param name="dataKey">Used to get the value of this field from the view</param>
-            <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
-            <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-            <param name="validations">functions used to validate changes to the field.</param>
         </member>
         <member name="M:Overworld.Ux.Simple.DataField.TryToSetValue(System.Object,System.String@)">
             <summary>
             Try to update the field value to a new one.
             Checks validations and returns an error message if there is one.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField.RunValidationsOn(System.Object,System.String@)">
+            <summary>
+            Used to run validations on the given value.
             </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataField.Copy(Overworld.Ux.Simple.View,System.Boolean)">
@@ -1384,20 +1436,59 @@
             Some field types require attribute data.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataField.Make(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.String,System.Collections.Generic.Dictionary{System.Type,System.Attribute},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}})">
+        <member name="M:Overworld.Ux.Simple.DataField.MakeDefault(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.Boolean,System.String,Meep.Tech.Collections.Generic.DelegateCollection{System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean}},Meep.Tech.Collections.Generic.DelegateCollection{System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean}},Meep.Tech.Collections.Generic.DelegateCollection{System.Func{Overworld.Ux.Simple.DataField,System.Object,System.ValueTuple{System.Boolean,System.String}}},Meep.Tech.Collections.Generic.DelegateCollection{System.Action{Overworld.Ux.Simple.DataField,System.Object}},System.Collections.Generic.Dictionary{System.Type,System.Attribute})">
             <summary>
             Make a new field that fits your needs.
             Some field types require attribute data.
             </summary>
         </member>
+        <member name="T:Overworld.Ux.Simple.DataField`1">
+            <summary>
+            A data field for input or display in a simple ux pannel/view
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField`1.OnValueChangedListeners">
+            <summary>
+            Actions to be executed on change.
+            Takes the current field, and the old value.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField`1.DefaultOnValueChangedListeners">
+            <summary>
+            Default fields added to the on changed listeners on init.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField`1.Validations">
+            <summary>
+            Functions that take the current field, and updated object data, and validate it.
+            Called whenever the value is changed. If the validation fails, the data view's value won't change from it's previous one.
+            TODO: if a field is invalid, a red X should appear to clear/reset it with a tooltip explaining why it's invalid.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField`1.DefaultValidations">
+            <summary>
+            Default validations added to the field.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField`1.Value">
+            <summary>
+            The value(s) selected.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField`1.#ctor(Overworld.Ux.Simple.DataField.DisplayType,System.String,System.String,System.Object,System.String,System.Boolean)">
+            <summary>
+            For making new datafield types
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField`1.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataField`1.RunValidationsOn(System.Object,System.String@)">
+            <summary><inheritdoc/></summary>
+        </member>
         <member name="T:Overworld.Ux.Simple.DataFieldKeyValueSet">
             <summary>
             Represents a key value set in a ui
-            </summary>
-        </member>
-        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Value">
-            <summary>
-            The values
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Keys">
@@ -1409,57 +1500,28 @@
         <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Count">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Item(System.String)">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.String,System.Object},System.ValueTuple{System.Boolean,System.String}}},System.Collections.Generic.IEnumerable{System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.Dictionary{System.String,System.Object},System.ValueTuple{System.Boolean,System.String}}})">
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.#ctor(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Boolean)">
             <summary>
             Make a key value set to display in a ux.
             </summary>
-            <param name="entryValidations">Add validation other than the built in validation</param>
             <param name="childFieldAttributes">Add attributes to each generated child input</param>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
+        <member name="P:Overworld.Ux.Simple.DataFieldKeyValueSet.Item(System.String)">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._removeLast">
-            <summary>
-            remove the last item from the collection
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._remove(System.String)">
-            <summary>
-            remove the item at the collection index
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Add(System.String,System.Object)">
+        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet._copyValueAndDefaults(Overworld.Ux.Simple.View,System.Boolean)">
             <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.ContainsKey(System.String)">
             <summary><inheritdoc/></summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Remove(System.String)">
-            <summary><inheritdoc/></summary>
-        </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.TryGetValue(System.String,System.Object@)">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Add(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Clear">
             <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Contains(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
             <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.CopyTo(System.Collections.Generic.KeyValuePair{System.String,System.Object}[],System.Int32)">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.Remove(System.Collections.Generic.KeyValuePair{System.String,System.Object})">
             <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DataFieldKeyValueSet.GetEnumerator">
@@ -1475,7 +1537,10 @@
             The type of data this set holds.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean},System.Func{Overworld.Ux.Simple.DataField,System.Collections.Generic.KeyValuePair{System.Int32,System.Object},System.ValueTuple{System.Boolean,System.String}}[],System.Func{Overworld.Ux.Simple.DataField,System.Collections.ArrayList,System.ValueTuple{System.Boolean,System.String}}[])">
+        <member name="P:Overworld.Ux.Simple.DataFieldSet.Item(System.Int32)">
+            <summary><inheritdoc/></summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.DataFieldSet.#ctor(System.String,System.Type,System.Collections.Generic.IEnumerable{System.Attribute},System.String,System.Collections.ArrayList,System.String,System.Boolean)">
             <summary>
             Make a key value set to display in a ux.
             </summary>
@@ -1483,26 +1548,8 @@
             <param name="childFieldAttributes">Add attributes to each generated child input</param>
             <param name="rowValues">The default/current list values</param>
         </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet.Copy(Overworld.Ux.Simple.View,System.Boolean)">
+        <member name="M:Overworld.Ux.Simple.DataFieldSet._copyValueAndDefaults(Overworld.Ux.Simple.View,System.Boolean)">
             <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
-            <summary><inheritdoc/></summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet._update(System.Collections.Generic.KeyValuePair{System.Int32,System.Object})">
-            <summary>
-            Used to update the colletction
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet._removeLast">
-            <summary>
-            remove the last item from the collection
-            </summary>
-        </member>
-        <member name="M:Overworld.Ux.Simple.DataFieldSet._remove(System.Int32)">
-            <summary>
-            remove the item at the collection index
-            </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.DropdownSelectField`1">
             <summary>
@@ -1517,24 +1564,17 @@
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.Options">
             <summary>
             The valid options, indexed by their display key.
-            READ-ONLY!
+            </summary>
+        </member>
+        <member name="F:Overworld.Ux.Simple.DropdownSelectField.DefaultDropdownOptionsValidationDelegateKey">
+            <summary>
+            The delegate collection key for the default dropdown options validation method
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.OnSelectableValueLimitChangeListeners">
             <summary>
             Actions to be executed when the amount of values this can hold changes.
-            Takes the current field, and the old value.
-            </summary>
-        </member>
-        <member name="F:Overworld.Ux.Simple.DropdownSelectField.DefaultOnSelectableValueLimitChangeListenerName">
-            <summary>
-            The key used for OnChangeListeners when you set OnChangeListener via Init
-            </summary>
-        </member>
-        <member name="P:Overworld.Ux.Simple.DropdownSelectField.OnSelectableValueLimitChangeListener">
-            <summary>
-            Action to be executed when the amount of values this can hold changes.
-            Sets this under the DefaultOnSelectableValueLimitChangeListenerName key in OnSelectableValueLimitChangeListeners
+            Takes the current field, and the old limit.
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.MultiSelectAllowed">
@@ -1547,13 +1587,24 @@
             The max values allowed to be selected at once.
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DropdownSelectField.Value">
-            <summary>
-            The value(s) selected.
-            </summary>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.DefaultValidations">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="M:Overworld.Ux.Simple.DropdownSelectField.Copy(Overworld.Ux.Simple.View,System.Boolean)">
             <summary><inheritdoc/></summary>
+        </member>
+        <member name="T:Overworld.Ux.Simple.IIndexedItemsDataField`1">
+            <summary>
+            A Data field that is an indexed collection of other fields.
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.IIndexedItemsDataField`1.TryToUpdateValueAtIndex(`0,System.Object,System.String@)">
+            <summary>
+            Called after an individual field has validated itself.
+            Used to update the internal Value at the key with the updated child field value.
+            This should call RunValidationsOn.
+            TODO: break this up into a few smaller functions like RunEntryValidationsOn()
+            </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.IIndexedItemsDataField">
             <summary>
@@ -1563,7 +1614,8 @@
         <member name="M:Overworld.Ux.Simple.IIndexedItemsDataField.TryToUpdateValueAtIndex(System.Object,System.Object,System.String@)">
             <summary>
             Called after an individual field has validated itself.
-            Used to update the internal Value at the key with the updated child field value
+            Used to update the internal Value at the key with the updated child field value.
+            This should call RunValidationsOn.
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.RangeSliderField">
@@ -1580,6 +1632,9 @@
             <summary>
             If this only allows whole numbers
             </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.RangeSliderField.TryToSetValue(System.Object,System.String@)">
+            <summary><inheritdoc/></summary>
         </member>
         <member name="T:Overworld.Ux.Simple.ReadOnlyTextField">
             <summary>
@@ -1738,17 +1793,20 @@
         </member>
         <member name="T:Overworld.Ux.Simple.SimpleButton">
             <summary>
-            Represents a simple button in a ui
+            Represents a simple clickable button in a ui.
+            You can add more onClick callbacks via the OnValueChangeListeners callbacks.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.SimpleButton.#ctor(System.String,Overworld.Data.Executeable,System.String,System.String,System.Boolean,System.Func{Overworld.Ux.Simple.DataField,Overworld.Ux.Simple.View,System.Boolean})">
+        <member name="M:Overworld.Ux.Simple.SimpleButton.#ctor(System.String,System.String,System.String,System.Boolean,Overworld.Data.Executeable)">
             <summary>
             Make a clickable UI button that does something on click.
+            You can add more onClick callbacks via the OnValueChangedListeners callbacks.
             </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.SimpleButton.Click">
             <summary>
             Used to update the colletction
+            You can add more onClick callbacks via the OnValueChangedListeners callbacks.
             </summary>
         </member>
         <member name="T:Overworld.Ux.Simple.Title">
@@ -2067,12 +2125,6 @@
             Make a base height tile for a new height value.
             This will throw if you try to create type for a height that already has a type.
             </summary>
-        </member>
-        <member name="T:DelegateCollection`1">
-            <summary>
-            An ordered collection of delegates
-            </summary>
-            <typeparam name="TAction"></typeparam>
         </member>
         <member name="T:TagedCollection`2">
             <summary>

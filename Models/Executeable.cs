@@ -21,5 +21,10 @@ namespace Overworld.Data {
       protected Type(Archetype.Identity id) 
         : base(id) { }
     }
+
+    /// <summary>
+    /// Execute this with the internal program and context.
+    /// </summary>
+    public virtual void Execute() {}
   }
 }

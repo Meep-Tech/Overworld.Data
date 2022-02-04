@@ -202,7 +202,7 @@ namespace Overworld.Ux.Simple {
         return null;
       }
 
-      return DataField.Make(
+      return DataField.MakeDefault(
         title: name ?? fieldInfo?.Name,
         type: type.Value,
         validations: validationFunctions,
