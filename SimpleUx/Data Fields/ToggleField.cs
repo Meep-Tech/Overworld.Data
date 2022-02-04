@@ -1,49 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿namespace Overworld.Ux.Simple {
 
-namespace Overworld.Ux.Simple {
   /// <summary>
   /// A boolean toggle specific Simple Ux Field.
   /// </summary>
-  public class ToggleField : DataField {
+  public class ToggleField : DataField<bool> {
 
     public ToggleField(
       string name,
       string tooltip = null, 
       bool value = false,
       string dataKey = null,
-      bool isReadOnly = false, 
-      Func<DataField, View, bool> enabledIf = null,
-      params Func<DataField, bool, (bool success, string message)>[] validations
-    ) : this(
-      name, 
-      tooltip,
-      value,
-      dataKey,
-      isReadOnly,
-      enabledIf, 
-      validations?.AsEnumerable()
-    ) {}
-
-    public ToggleField(
-      string name,
-      string tooltip = null, 
-      bool value = false,
-      string dataKey = null,
-      bool isReadOnly = false, 
-      Func<DataField, View, bool> enabledIf = null,
-      IEnumerable<Func<DataField, bool, (bool success, string message)>> validations = null
+      bool isReadOnly = false
     ) : base(
       DisplayType.Toggle, 
       name, 
       tooltip,
       value,
       dataKey,
-      isReadOnly,
-      enabledIf, 
-      validations?
-        .Select(func => func.CastMiddleType<bool, object>())
+      isReadOnly
     ) {}
   }
 }

@@ -1,6 +1,4 @@
-﻿using Meep.Tech.Collections;
-using Meep.Tech.Collections.Generic;
-using Meep.Tech.Data;
+﻿using Meep.Tech.Collections.Generic;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -116,6 +114,31 @@ namespace Overworld.Ux.Simple {
     /// </summary>
     public bool TryToGetField(string key, out DataField field)
       => _fields.TryGetValue(key.ToLower(), out field);
+
+    /// <summary>
+    /// Get a field by key
+    /// </summary>
+    public TDataField GetField<TDataField>(string key)
+      where TDataField : DataField
+        => (TDataField)_fields[key.ToLower()];
+
+    /// <summary>
+    /// try to get a field by key
+    /// </summary>
+    public TDataField TryToGetField<TDataField>(string key)
+      where TDataField : DataField
+        => _fields.TryGetValue(key.ToLower(), out var value)
+         ? (TDataField)value
+         : null;
+
+    /// <summary>
+    /// try to get a field by key
+    /// </summary>
+    public bool TryToGetField<TDataField>(string key, out TDataField field)
+      where TDataField : DataField
+        => _fields.TryGetValue(key.ToLower(), out var found)
+          ? (field = (TDataField)found) != null
+          : (field = null) != null;
 
     /// <summary>
     /// Get a field value by key

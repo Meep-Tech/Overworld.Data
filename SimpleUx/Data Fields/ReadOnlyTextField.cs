@@ -21,10 +21,8 @@ namespace Overworld.Ux.Simple {
       dataKey
         ?? (!string.IsNullOrWhiteSpace(title)
           ? title
-          : new Guid().ToString()),
-      true,
-      null,
-      null
+          : Guid.NewGuid().ToString()),
+      true
     ) {
     }
   }

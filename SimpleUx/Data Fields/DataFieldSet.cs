@@ -8,7 +8,7 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// Represents a key value set in a ui
   /// </summary>
-  public class DataFieldSet : DataField, IIndexedItemsDataField {
+  public class DataFieldSet : CollectionOfDataFields<int, ArrayList> {
 
     /// <summary>
     /// The type of data this set holds.
@@ -17,8 +17,11 @@ namespace Overworld.Ux.Simple {
       get;
     }
 
-    internal IEnumerable<Attribute> _childFieldAttributes;
-    Func<DataField, KeyValuePair<int, object>, (bool success, string message)>[] _entryValidations;
+    ///<summary><inheritdoc/></summary>
+    public override object this[int key] { 
+      get => Value[key]; 
+      protected set => Value[key] = value; 
+    }
 
     /// <summary>
     /// Make a key value set to display in a ux.
@@ -33,62 +36,27 @@ namespace Overworld.Ux.Simple {
       string tooltip = null,
       ArrayList rowValues = null,
       string dataKey = null,
-      bool isReadOnly = false,
-      Func<DataField, View, bool> enable = null,
-      Func<DataField, KeyValuePair<int, object>, (bool success, string message)>[] entryValidations = null,
-      Func<DataField, ArrayList, (bool success, string message)>[] fullValidations = null
+      bool isReadOnly = false
     ) : base(
       DataFieldSet.DisplayType.FieldList,
       name,
       tooltip,
       rowValues, 
       dataKey,
-      isReadOnly,
-      enable,
-      fullValidations
-        ?.Select(func => func.CastMiddleType<ArrayList, object>())
+      isReadOnly
     ) {
       DataType = dataType;
-      _childFieldAttributes = childFieldAttributes;
-      _entryValidations = entryValidations;
     }
 
     ///<summary><inheritdoc/></summary>
-    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+    protected override DataField _copyValueAndDefaults(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
       var value = base.Copy(toNewView, withCurrentValuesAsNewDefaults);
       value.Value = new ArrayList((Value as ArrayList).Cast<object>().ToList());
-      value.DefaultValue = withCurrentValuesAsNewDefaults 
-        ? new ArrayList(Value as ArrayList) 
+      value.DefaultValue = withCurrentValuesAsNewDefaults
+        ? new ArrayList(Value as ArrayList)
         : new ArrayList(DefaultValue as ArrayList);
-      (value as DataFieldSet)._childFieldAttributes = _childFieldAttributes;
 
       return value;
-    }
-
-    ///<summary><inheritdoc/></summary>
-    public bool TryToUpdateValueAtIndex(object key, object newValue, out string resultMessage) {
-      throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Used to update the colletction
-    /// </summary>
-    internal void _update(KeyValuePair<int, object> itemAtIndex) {
-      throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// remove the last item from the collection
-    /// </summary>
-    internal void _removeLast() {
-      throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// remove the item at the collection index
-    /// </summary>
-    internal void _remove(int key) {
-      throw new NotImplementedException();
     }
   }
 }

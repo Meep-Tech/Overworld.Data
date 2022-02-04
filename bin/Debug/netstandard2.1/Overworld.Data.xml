@@ -1158,11 +1158,11 @@
             Used to indicate a field where you can select one of a set of options.
             </summary>
         </member>
-        <member name="M:Overworld.Ux.Simple.DropdownAttribute.#ctor(System.Boolean,System.Object[],System.String[])">
+        <member name="M:Overworld.Ux.Simple.DropdownAttribute.#ctor(System.Int32,System.Object[],System.String[])">
             <summary>
             Make a new selectable
             </summary>
-            <param name="MultiSelect">If more than one value can be selected</param>
+            <param name="SelectableValuesLimit">The max values this select can hold as selected values. >1 makes it a multiselect. 0 makes it disabled.</param>
             <param name="OptionValues">The option values. If no names are provided, these are turned into strings and those are used as the field keys</param>
             <param name="OptionNames">The option names. Must either have none, or the same number as the values</param>
         </member>
@@ -1271,6 +1271,23 @@
         <member name="P:Overworld.Ux.Simple.DataField.Type">
             <summary>
             The type of display this field should use.
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField.OnChangeListeners">
+            <summary>
+            Actions to be executed on change.
+            Takes the current field, and the old value.
+            </summary>
+        </member>
+        <member name="F:Overworld.Ux.Simple.DataField.DefaultOnChangeListenerName">
+            <summary>
+            The key used for OnChangeListeners when you set OnChangeListener via Init
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DataField.OnChangeListener">
+            <summary>
+            Action to be executed on change.
+            Sets this under the DefaultOnChangeListenerName key in OnChangeListeners
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DataField.Validations">
@@ -1503,9 +1520,31 @@
             READ-ONLY!
             </summary>
         </member>
-        <member name="P:Overworld.Ux.Simple.DropdownSelectField.MultiselectAllowed">
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.OnSelectableValueLimitChangeListeners">
+            <summary>
+            Actions to be executed when the amount of values this can hold changes.
+            Takes the current field, and the old value.
+            </summary>
+        </member>
+        <member name="F:Overworld.Ux.Simple.DropdownSelectField.DefaultOnSelectableValueLimitChangeListenerName">
+            <summary>
+            The key used for OnChangeListeners when you set OnChangeListener via Init
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.OnSelectableValueLimitChangeListener">
+            <summary>
+            Action to be executed when the amount of values this can hold changes.
+            Sets this under the DefaultOnSelectableValueLimitChangeListenerName key in OnSelectableValueLimitChangeListeners
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.MultiSelectAllowed">
             <summary>
             If the user can select more than one value
+            </summary>
+        </member>
+        <member name="P:Overworld.Ux.Simple.DropdownSelectField.MaxValuesAllowed">
+            <summary>
+            The max values allowed to be selected at once.
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.Value">
@@ -1821,6 +1860,21 @@
             </summary>
         </member>
         <member name="M:Overworld.Ux.Simple.View.TryToGetField(System.String,Overworld.Ux.Simple.DataField@)">
+            <summary>
+            try to get a field by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.GetField``1(System.String)">
+            <summary>
+            Get a field by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetField``1(System.String)">
+            <summary>
+            try to get a field by key
+            </summary>
+        </member>
+        <member name="M:Overworld.Ux.Simple.View.TryToGetField``1(System.String,``0@)">
             <summary>
             try to get a field by key
             </summary>

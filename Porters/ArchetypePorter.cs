@@ -1,4 +1,4 @@
-﻿using Meep.Tech.Collections;
+﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data;
 using Newtonsoft.Json.Linq;
 using System;

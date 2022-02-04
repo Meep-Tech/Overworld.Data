@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meep.Tech.Collections.Generic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,7 +8,7 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// A data field for input or display in a simple ux pannel/view
   /// </summary>
-  public class DataField : IUxViewElement {
+  public abstract class DataField : IUxViewElement {
 
     /// <summary>
     /// The view this field is in.
@@ -41,11 +42,36 @@ namespace Overworld.Ux.Simple {
     }
 
     /// <summary>
-    /// Functions that take the current field, and updated object data, and validate it.
+    /// Functions that check if the current field should be enabled.
+    /// Called when another field in the same view is updated, or Update is called on the view.
     /// </summary>
-    public IReadOnlyCollection<Func<DataField, object, (bool success, string message)>> Validations
-      => _validations; List<Func<DataField, object, (bool success, string message)>> _validations
-        = new();
+    public DelegateCollection<Func<DataField, View, bool>> EnabledIfCheckers {
+      get => DefaultEnabledIfCheckers;
+      init => value.ForEach(DefaultEnabledIfCheckers.Add);
+    }
+    /// <summary>
+    /// Default enable if checkers added to the field.
+    /// </summary>
+    protected virtual DelegateCollection<Func<DataField, View, bool>> DefaultEnabledIfCheckers {
+      get;
+      private set;
+    } = new();
+
+    /// <summary>
+    /// Functions that check if the current field should be hidden.
+    /// Called when another field in the same view is updated, or Update is called on the view.
+    /// </summary>
+    public DelegateCollection<Func<DataField, View, bool>> HideIfCheckers {
+      get => DefaultHideIfCheckers;
+      init => value.ForEach(DefaultHideIfCheckers.Add);
+    }
+    /// <summary>
+    /// Default hide if checkers added to the field.
+    /// </summary>
+    protected virtual DelegateCollection<Func<DataField, View, bool>> DefaultHideIfCheckers {
+      get;
+      private set;
+    } = new();
 
     /// <summary>
     /// The current value of the field.
@@ -94,13 +120,6 @@ namespace Overworld.Ux.Simple {
       get;
     } = null;
 
-    /// <summary>
-    /// Used to determine if the field should be enabled.
-    /// </summary>
-    public Func<DataField, View, bool> Enable {
-      get;
-    }
-
     internal DataField _controllerField;
 
     /// <summary>
@@ -112,39 +131,13 @@ namespace Overworld.Ux.Simple {
     /// <param name="value">default/current value of the field</param>
     /// <param name="dataKey">Used to get the value of this field from the view</param>
     /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
-    /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-    /// <param name="validations">functions used to validate changes to the field.</param>
-    public DataField(
+    protected DataField(
       DisplayType type,
       string name,
       string tooltip = null,
       object value = null,
       string dataKey = null,
-      bool isReadOnly = false,
-      Func<DataField, View, bool> enable = null,
-      params Func<DataField, object, (bool success, string message)>[] validations
-    ) : this(type, name, tooltip, value, dataKey, isReadOnly, enable, validations.AsEnumerable()) {}
-
-    /// <summary>
-    /// Make a new data field for a Simple Ux.
-    /// </summary>
-    /// <param name="type">the DisplayType to use for this field</param>
-    /// <param name="name">the field name. should be unique unless you change the data key</param>
-    /// <param name="tooltip">a breif description of the field, will appear on mouse hover in the ui</param>
-    /// <param name="value">default/current value of the field</param>
-    /// <param name="dataKey">Used to get the value of this field from the view</param>
-    /// <param name="isReadOnly">Some read only fields may be formatted differently (like Text). try passing '() => false' to enable if you want a blured out input field instead.</param>
-    /// <param name="enable">A function to determine if this field should be enabled currently or not. Parameters are this field, and the parent pannel.</param>
-    /// <param name="validations">functions used to validate changes to the field.</param>
-    protected DataField(
-        DisplayType type,
-        string name,
-        string tooltip = null,
-        object value = null,
-        string dataKey = null,
-        bool isReadOnly = false,
-        Func<DataField, View, bool> enable = null,
-        IEnumerable<Func<DataField, object, (bool success, string message)>> validations = null
+      bool isReadOnly = false
     ) {
       Type = type;
       Name = name;
@@ -158,9 +151,6 @@ namespace Overworld.Ux.Simple {
       if(!isReadOnly && DataKey is null) {
         throw new ArgumentException($"Non-read-only fields require a data key. Provide a title, name, or datakey to the field constructor or Make function");
       }
-
-      Enable = enable ?? ((_, _) => true);
-      _validations = validations?.ToList();
     }
 
     /// <summary>
@@ -168,40 +158,38 @@ namespace Overworld.Ux.Simple {
     /// Checks validations and returns an error message if there is one.
     /// </summary>
     public virtual bool TryToSetValue(object value, out string resultMessage) {
-      resultMessage = "";
-
-      if(Validations is not null) {
-        //Default func
-        foreach((bool success, string message) in Validations.Select(validator => validator(this, value))) {
-          if(!success) {
-            resultMessage = string.IsNullOrWhiteSpace(message)
-              ? "Value did not pass custom validation functions."
-              : message;
-
-            return false;
-          } else
-            resultMessage = message;
-        }
-      }
+      var oldValue = Value;
+      resultMessage = "Successfuly Set Value!";
 
       /// for controller fields, that need to be validated by their parent.
       if(_controllerField is not null) {
         (object key, object value)? pair = null;
         if(value is KeyValuePair<string, object> stringKeyedPair) {
           pair = (stringKeyedPair.Key, stringKeyedPair.Value);
-        } else if (value is KeyValuePair<int, object> intKeyedPair) {
+        } else if(value is KeyValuePair<int, object> intKeyedPair) {
           pair = (intKeyedPair.Key, intKeyedPair.Value);
         }
         if(pair.HasValue) {
-          if (!((_controllerField as IIndexedItemsDataField)?.TryToUpdateValueAtIndex(pair.Value.key, pair.Value.value, out resultMessage) ?? true)) {
+          oldValue = _controllerField.Value;
+          if(!((_controllerField as IIndexedItemsDataField)?.TryToUpdateValueAtIndex(pair.Value.key, pair.Value.value, out resultMessage) ?? true)) {
             return false;
           }
         }
+      } else if(!RunValidationsOn(value, out resultMessage)) {
+        return false;
       }
 
       Value = value;
+      _runOnValueChangedCallbacks(this, oldValue);
+
       return true;
     }
+
+    /// <summary>
+    /// Used to run validations on the given value.
+    /// </summary>
+    protected abstract bool RunValidationsOn(object value, out string resultMessage);
+    internal abstract void _runOnValueChangedCallbacks(DataField updatedField, object oldValue);
 
     /// <summary>
     /// Memberwise clone to copy
@@ -210,8 +198,9 @@ namespace Overworld.Ux.Simple {
     public virtual DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
       var newField = MemberwiseClone() as DataField;
       newField.View = toNewView;
-      newField._validations = _validations?.ToList();
       newField.DefaultValue = withCurrentValuesAsNewDefaults ? Value : DefaultValue;
+      newField.DefaultHideIfCheckers = new(DefaultHideIfCheckers);
+      newField.DefaultEnabledIfCheckers = new(DefaultEnabledIfCheckers);
 
       return newField;
     }
@@ -247,15 +236,17 @@ namespace Overworld.Ux.Simple {
     /// Some field types require attribute data.
     /// </summary>
     public static DataField Make(
-      DisplayType type, 
+      DisplayType type,
       string title = null,
-      string tooltip = null, 
+      string tooltip = null,
       object value = null,
       bool isReadOnly = false,
-      Func<DataField, View, bool> enabledIf = null,
       string dataKey = null,
-      Dictionary<Type, Attribute> attributes = null,
-      IEnumerable<Func<DataField, object, (bool success, string message)>> validations = null
+      DelegateCollection<Func<DataField, View, bool>> enabledIf = null,
+      DelegateCollection<Func<DataField, View, bool>> hiddenIf = null,
+      DelegateCollection<Func<DataField, object, (bool success, string message)>> validations = null,
+      DelegateCollection<Action<DataField, object>> onValueChanged = null,
+      Dictionary<Type, Attribute> attributes = null
     ) {
       switch(type) {
         case DisplayType.Text:
@@ -340,13 +331,14 @@ namespace Overworld.Ux.Simple {
             name: title,
             options: options ?? throw new ArgumentNullException(nameof(options)),
             tooltip: tooltip,
-            multiselectIsAllowed: selectableData?._isMultiselect ?? false,
+            maxSelectableValues: selectableData?._selectLimit ?? 1,
             alreadySelectedOptionKeys: value as string[],
             dataKey: dataKey,
-            isReadOnly: isReadOnly,
-            enabledIf: enabledIf,
-            validations: validations?.Select(func => func.CastMiddleType<object, KeyValuePair<string, object>>())
-          );
+            isReadOnly: isReadOnly
+          ) {
+            EnabledIfCheckers = enabledIf,
+            Validations = validations
+          };
 
         case DisplayType.FieldList:
         case DisplayType.Executeable:
@@ -355,15 +347,93 @@ namespace Overworld.Ux.Simple {
         case DisplayType.Button:
           throw new NotImplementedException(type.ToString());
         default:
-          return new DataField(
-            name: title,
-            type: type,
-            validations: validations,
-            tooltip: tooltip,
-            value: value,
-            enable: enabledIf
-        );
+          throw new NotSupportedException(type.ToString());
       }
+    }
+  }
+
+  /// <summary>
+  /// A data field for input or display in a simple ux pannel/view
+  /// </summary>
+  public abstract class DataField<TValue> : DataField {
+
+    /// <summary>
+    /// The value(s) selected.
+    /// </summary>
+    public new TValue Value {
+      get => (TValue)base.Value;
+      protected set => base.Value = value;
+    }
+
+    /// <summary>
+    /// For making new datafield types
+    /// </summary>
+    protected DataField(DisplayType type, string name, string tooltip = null, object value = null, string dataKey = null, bool isReadOnly = false) 
+      : base(type, name, tooltip, value, dataKey, isReadOnly) {}
+
+    /// <summary>
+    /// Actions to be executed on change.
+    /// Takes the current field, and the old value.
+    /// </summary>
+    public DelegateCollection<Action<DataField, TValue>> OnValueChangedListeners {
+      get => DefaultOnValueChangedListeners;
+      init => value.ForEach(DefaultOnValueChangedListeners.Add);
+    }
+    /// <summary>
+    /// Default fields added to the on changed listeners on init.
+    /// </summary>
+    protected virtual DelegateCollection<Action<DataField, TValue>> DefaultOnValueChangedListeners {
+      get;
+      private set;
+    } = new();
+
+    /// <summary>
+    /// Functions that take the current field, and updated object data, and validate it.
+    /// Called whenever the value is changed. If the validation fails, the data view's value won't change from it's previous one.
+    /// TODO: if a field is invalid, a red X should appear to clear/reset it with a tooltip explaining why it's invalid.
+    /// </summary>
+    public virtual DelegateCollection<Func<DataField, TValue, (bool success, string message)>> Validations {
+      get => DefaultValidations;
+      init => value.ForEach(DefaultValidations.Add);
+    }
+    /// <summary>
+    /// Default validations added to the field.
+    /// </summary>
+    protected virtual DelegateCollection<Func<DataField, TValue, (bool success, string message)>> DefaultValidations {
+      get;
+      private set;
+    } = new();
+
+    ///<summary><inheritdoc/></summary>
+    protected override bool RunValidationsOn(object value, out string resultMessage) {
+      resultMessage = "Value Is Valid! :D";
+      if(Validations.Any()) {
+        foreach((bool success, string message) in Validations.Select(validator => validator.Value(this, value))) {
+          if(!success) {
+            resultMessage = string.IsNullOrWhiteSpace(message)
+              ? "Value did not pass custom validation functions."
+              : message;
+
+            return false;
+          } else
+            resultMessage = message ?? resultMessage;
+        }
+      }
+
+      return true;
+    }
+
+    internal override void _runOnValueChangedCallbacks(DataField updatedField, object oldValue)
+      => OnValueChangedListeners
+        .ForEach(listener => listener.Value(this, (TValue)oldValue));
+
+    ///<summary><inheritdoc/></summary>
+    public override DataField Copy(View toNewView = null, bool withCurrentValuesAsNewDefaults = false) {
+      var newField = base.Copy(toNewView, withCurrentValuesAsNewDefaults) as DataField<TValue>;
+      newField.DefaultValidations = new(Validations);
+      newField.DefaultOnValueChangedListeners = new(DefaultOnValueChangedListeners);
+
+      return newField;
     }
   }
 }

@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Meep.Tech.Collections.Generic;
+using System;
 using System.Linq;
 
 namespace Overworld.Ux.Simple {
@@ -7,7 +7,7 @@ namespace Overworld.Ux.Simple {
   /// <summary>
   /// A slider for a value between the min and max.
   /// </summary>
-  public class RangeSliderField : DataField {
+  public class RangeSliderField : DataField<double> {
 
     /// <summary>
     /// The valid range for this slider
@@ -23,32 +23,15 @@ namespace Overworld.Ux.Simple {
       get;
     }
 
-    public RangeSliderField(
-      string name,
-      float min,
-      float max,
-      bool clampedToWholeNumbers = false,
-      string tooltip = null,
-      float? value = null,
-      string dataKey = null,
-      bool isReadOnly = false,
-      Func<DataField, View, bool> enabledIf = null,
-      params Func<DataField, double, (bool success, string message)>[] validations
-    ) : this(
-      name,
-      min,
-      max,
-      clampedToWholeNumbers,
-      tooltip,
-      value,
-      dataKey,
-      isReadOnly,
-      enabledIf,
-      validations?.AsEnumerable()
-    ) {
-      IsClampedToWholeNumbers = clampedToWholeNumbers;
-      ValidRange = clampedToWholeNumbers ? ((int)Math.Floor(min), (int)Math.Floor(max)) : (min, max);
-    }
+    protected override DelegateCollection<Func<DataField, double, (bool success, string message)>> DefaultValidations 
+      => base.DefaultValidations.Append("__defaultSliderWithinRangeValidator_", (f, v) => {
+        bool r = v >= (ValidRange.min - 0.001f) && v <= (ValidRange.max + 0.001f);
+        if(r) {
+          return (true, null);
+        } else {
+          return (false, $"Value: {v}, is outside of valid range: {(ValidRange.min - 0.001f)} to {(ValidRange.max + 0.001f)}");
+        }
+      });
 
     public RangeSliderField(
       string name,
@@ -58,33 +41,20 @@ namespace Overworld.Ux.Simple {
       string tooltip = null,
       float? value = null,
       string dataKey = null,
-      bool isReadOnly = false,
-      Func<DataField, View, bool> enabledIf = null,
-      IEnumerable<Func<DataField, double, (bool success, string message)>> validations = null
+      bool isReadOnly = false
     ) : base(
       DisplayType.RangeSlider,
       name,
       tooltip,
       clampedToWholeNumbers ? Math.Floor(value ?? min) : value ?? min,
       dataKey,
-      isReadOnly,
-      enabledIf,
-      (validations
-        ?? Enumerable.Empty<Func<DataField, double, (bool, string)>>())
-          .Append((f, v) => {
-            bool r = v >= (min - 0.001f) && v <= (max + 0.001f);
-            if(r) {
-              return (true, null);
-            } else {
-              return (false, $"Value: {v}, is outside of valid range: {(min - 0.001f)} to {(max + 0.001f)}");
-            }
-          })
-          .Select(func => func.CastMiddleType<double, object>())
+      isReadOnly
     ) {
       IsClampedToWholeNumbers = clampedToWholeNumbers;
       ValidRange = clampedToWholeNumbers ? ((int)Math.Floor(min), (int)Math.Floor(max)) : (min, max);
     }
 
+    ///<summary><inheritdoc/></summary>
     public override bool TryToSetValue(object value, out string message) {
       double number = Math.Round(
           double.TryParse(
@@ -101,8 +71,8 @@ namespace Overworld.Ux.Simple {
     }
   }
 
-  internal static class FuncExtensions {
+  /*internal static class FuncExtensions {
     internal static Func<DataField, TTo, (bool, string)> CastMiddleType<TFrom, TTo>(this Func<DataField, TFrom, (bool, string)> from)
       => (f, v) => from(f, v is TFrom fromType ? fromType : throw new Exception($"Cannot cast from {typeof(TTo).FullName}[TTo] to {typeof(TFrom).FullName}[TFrom]."));
-  }
+  }*/
 }

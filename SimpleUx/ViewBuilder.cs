@@ -1,5 +1,4 @@
 ﻿using Meep.Tech.Collections.Generic;
-using Meep.Tech.Collections;
 using Meep.Tech.Data;
 using Overworld.Utility;
 using System;
@@ -118,7 +117,7 @@ namespace Overworld.Ux.Simple {
 
       /// Seletctable dropdown fields
       if(selectableData is not null || fieldType.IsEnum) {
-        selectableData ??= new DropdownAttribute(selectableData?._isMultiselect ?? false);
+        selectableData ??= new DropdownAttribute(selectableData?._selectLimit ?? 1);
         type = DataField.DisplayType.Dropdown;
         Dictionary<string, object> options = selectableData?._options;
         if(fieldType.IsEnum) {
@@ -456,7 +455,7 @@ namespace Overworld.Ux.Simple {
       /// add all the sub entries of the key value set and link them:
       if(element is DataFieldKeyValueSet keyValueSet) {
         // TODO: allow people to apply certain attributes, like the range display one, to a dictionary, and it will apply to the children.
-        foreach(KeyValuePair<string, object> entry in keyValueSet.Value as Dictionary<string, object>) {
+        foreach(KeyValuePair<string, object> entry in keyValueSet.Value) {
           DataField field = BuildDefaultField(entry.Value.GetType(), null, fieldNameOverride: "", fieldDataKeyOverride: keyValueSet.Name + "::" + entry.Key);
           field._controllerField = keyValueSet;
           _currentColumnEntries.Add(field);
