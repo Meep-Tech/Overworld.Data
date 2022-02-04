@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Overworld.Ux.Simple {
+﻿namespace Overworld.Ux.Simple {
 
   /// <summary>
   /// A Data field that is an indexed collection of other fields.

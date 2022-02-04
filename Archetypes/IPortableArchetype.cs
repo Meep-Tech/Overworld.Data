@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Overworld.Data {
+﻿namespace Overworld.Data {
   public interface IPortableArchetype {
     public string ResourceKey {
       get;

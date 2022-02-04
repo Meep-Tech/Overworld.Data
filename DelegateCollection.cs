@@ -1,4 +1,4 @@
-﻿using Meep.Tech.Data.Utility;
+﻿using Meep.Tech.Collections.Generic;
 using System;
 
 /// <summary>
@@ -6,6 +6,6 @@ using System;
 /// </summary>
 /// <typeparam name="TAction"></typeparam>
 public class DelegateCollection<TAction>
-  : OrderedDictionary<string, TAction> where TAction
-  : Delegate {
-}
+  : OrderedDictionary<string, TAction> 
+  where TAction : Delegate 
+{}

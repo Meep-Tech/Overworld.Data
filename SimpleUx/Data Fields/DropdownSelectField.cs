@@ -1,4 +1,5 @@
-﻿using Overworld.Utility;
+﻿using Meep.Tech.Collections.Generic;
+using Overworld.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,11 +60,12 @@ namespace Overworld.Ux.Simple {
   public class DropdownSelectField : DataField {
 
     /// <summary>
-    /// The valid options, indexed by their display key
+    /// The valid options, indexed by their display key.
+    /// READ-ONLY!
     /// </summary>
-    public IReadOnlyDictionary<string, object> Options
+    public IReadOnlyOrderedDictionary<string, object> Options
       => _options;
-    Dictionary<string, object> _options;
+    OrderedDictionary<string, object> _options;
 
     /// <summary>
     /// If the user can select more than one value
@@ -118,7 +120,7 @@ namespace Overworld.Ux.Simple {
       DisplayType.Dropdown,
       name,
       tooltip,
-      alreadySelectedOptionKeys.Select(key => new KeyValuePair<string,object>(key, options[key])).ToList(),
+      alreadySelectedOptionKeys?.Select(key => new KeyValuePair<string,object>(key, options[key])).ToList(),
       dataKey,
       isReadOnly,
       enabledIf,
@@ -129,7 +131,7 @@ namespace Overworld.Ux.Simple {
             : (false, $"Unrecognized Select Item: {v.Key}, with value: {v.Value ?? "null"}. \n Valid Items:\n{string.Join('\n', (f as DropdownSelectField)._options.Keys.Select(key => $"\t> {key}"))}")
           ).Select(func => func.CastMiddleType<KeyValuePair<string, object>, object>())
     ) {
-      _options = options;
+      _options = new OrderedDictionary<string, object>(options);
       MultiselectAllowed = multiselectIsAllowed;
     }
 

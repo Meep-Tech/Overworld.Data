@@ -1,5 +1,6 @@
-﻿using Meep.Tech.Data;
-using Meep.Tech.Data.Utility;
+﻿using Meep.Tech.Collections;
+using Meep.Tech.Collections.Generic;
+using Meep.Tech.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ namespace Overworld.Ux.Simple {
     /// </summary>
     public string Id {
       get;
-    } = new Guid().ToString();
+    } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// Extra context you can provide to the component.

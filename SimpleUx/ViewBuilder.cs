@@ -1,5 +1,6 @@
-﻿using Meep.Tech.Data;
-using Meep.Tech.Data.Utility;
+﻿using Meep.Tech.Collections.Generic;
+using Meep.Tech.Collections;
+using Meep.Tech.Data;
 using Overworld.Utility;
 using System;
 using System.Collections;
@@ -7,7 +8,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace Overworld.Ux.Simple {
@@ -410,7 +410,9 @@ namespace Overworld.Ux.Simple {
       /// collect and apply data
       _view._tabs = new(); 
       _view._pannels = new();
-      foreach((Pannel.Tab tab, Pannel pannel) in _compiledPannels) {
+
+      foreach(KeyValuePair<Pannel.Tab, Pannel> entry in _compiledPannels) {
+        (Pannel.Tab tab, Pannel pannel) = entry;
         _view._tabs.Add(tab.Key.ToLower(), tab);
         _view._pannels.Add(tab.Key.ToLower(), pannel);
       }

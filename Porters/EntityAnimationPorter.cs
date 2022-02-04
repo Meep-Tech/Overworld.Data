@@ -1,14 +1,4 @@
-﻿using Meep.Tech.Data;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using System.IO;
-using UnityEditor;
-using System.Diagnostics.CodeAnalysis;
-
-namespace Overworld.Data.IO {
+﻿namespace Overworld.Data.IO {
   public partial class Entity {
     public partial class Animation {
       /// <summary>

@@ -12,7 +12,7 @@ namespace Overworld.Ux.Simple {
     /// <summary>
     /// The valid range for this slider
     /// </summary>
-    public (float min, float max) ValidRange {
+    public (double min, double max) ValidRange {
       get;
     }
 
@@ -52,8 +52,8 @@ namespace Overworld.Ux.Simple {
 
     public RangeSliderField(
       string name,
-      float min,
-      float max,
+      double min,
+      double max,
       bool clampedToWholeNumbers = false,
       string tooltip = null,
       float? value = null,
@@ -71,7 +71,14 @@ namespace Overworld.Ux.Simple {
       enabledIf,
       (validations
         ?? Enumerable.Empty<Func<DataField, double, (bool, string)>>())
-          .Append((f, v) => (v >= min && v <= max) ? (true, null) : (false, $"Value: {v}, is outside of valid range: {min} to {max}"))
+          .Append((f, v) => {
+            bool r = v >= (min - 0.001f) && v <= (max + 0.001f);
+            if(r) {
+              return (true, null);
+            } else {
+              return (false, $"Value: {v}, is outside of valid range: {(min - 0.001f)} to {(max + 0.001f)}");
+            }
+          })
           .Select(func => func.CastMiddleType<double, object>())
     ) {
       IsClampedToWholeNumbers = clampedToWholeNumbers;

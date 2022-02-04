@@ -1,6 +1,4 @@
-﻿using Meep.Tech.Data;
-
-namespace Overworld.Data {
+﻿namespace Overworld.Data {
 
   public partial class Entity {
     public partial class Animation {

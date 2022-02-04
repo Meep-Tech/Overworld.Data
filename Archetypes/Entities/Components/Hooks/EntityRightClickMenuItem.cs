@@ -1,8 +1,5 @@
 ﻿using Meep.Tech.Data;
-using Meep.Tech.Data.Utility;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Overworld.Data.Entites.Components {
   class EntityRightClickMenuAdditions : Entity.Component<EntityRightClickMenuAdditions> {

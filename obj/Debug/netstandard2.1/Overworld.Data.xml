@@ -1499,7 +1499,8 @@
         </member>
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.Options">
             <summary>
-            The valid options, indexed by their display key
+            The valid options, indexed by their display key.
+            READ-ONLY!
             </summary>
         </member>
         <member name="P:Overworld.Ux.Simple.DropdownSelectField.MultiselectAllowed">
