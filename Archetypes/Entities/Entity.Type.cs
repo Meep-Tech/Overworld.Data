@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using System;
 
 namespace Overworld.Data {
   public partial class Entity {
@@ -6,7 +7,10 @@ namespace Overworld.Data {
     /// <summary>
     /// A type of entity
     /// </summary>
-    public abstract partial class Type : Archetype<Entity, Entity.Type>, IPortableArchetype {
+    public abstract partial class Type 
+      : Archetype<Entity, Entity.Type>.WithDefaultParamBasedModelBuilders,
+        IPortableArchetype
+    {
 
       /// <summary>
       /// <inheritdoc/>

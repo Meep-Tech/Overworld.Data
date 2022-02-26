@@ -105,6 +105,6 @@ namespace Overworld.Data.Entities.Components {
       OnHeightChangeFuncs
         = new();
 
-    BasicPhysicalStats() {}
+    internal BasicPhysicalStats() {}
   }
 }

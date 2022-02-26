@@ -1,5 +1,4 @@
-﻿using Meep.Tech.Data;
-using Simple.Ux.XBam.Components;
+﻿using Simple.Ux.XBam.Components;
 using System.Collections.Generic;
 
 namespace Overworld.Data.Entites.Components {
