@@ -33,6 +33,12 @@ namespace Overworld.Data {
       = "Name";
 
     /// <summary>
+    /// Option parameter to override the object name
+    /// </summary>
+    public const string PagkageNameOverrideSetting
+      = "PackageName";
+
+    /// <summary>
     /// Option parameter to Move the imported files to the finished imports folder.
     /// Accepts a bool
     /// </summary>

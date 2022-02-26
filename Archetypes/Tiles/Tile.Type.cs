@@ -8,14 +8,14 @@ namespace Overworld.Data {
     /// Archetypes for tiles.
     /// </summary>
     [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-    public partial class Type : Archetype<Tile, Tile.Type>, IPortableArchetype {
+    public partial class Type : Archetype<Tile, Tile.Type>.WithDefaultParamBasedModelBuilders, IPortableArchetype {
 
       #region Archetype Config
 
       /// <summary>
       /// <inheritdoc/>
       /// </summary>
-      public override bool AllowInitializationsAfterLoaderFinalization
+      protected override bool AllowInitializationsAfterLoaderFinalization
         => true;
 
       #endregion
@@ -25,7 +25,7 @@ namespace Overworld.Data {
       /// </summary>
       public virtual string DefaultPackageName {
         get;
-      } = "-Tiles";
+      } = "_tiles";
 
       /// <summary>
       /// The unique resource key of this type

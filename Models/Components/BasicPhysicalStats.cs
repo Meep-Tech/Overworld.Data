@@ -7,7 +7,7 @@ namespace Overworld.Data.Entities.Components {
   /// <summary>
   /// Some basic physical stats for all characters
   /// </summary>
-  public class BasicPhysicalStats : Entity.Component<BasicPhysicalStats> {
+  public class BasicPhysicalStats : IToggleableComponent<BasicPhysicalStats> {
 
     /// <summary>
     /// Height, in "Tiles" (1.75 is average)
@@ -58,7 +58,14 @@ namespace Overworld.Data.Entities.Components {
         }
         _weight = toSet;
       }
-    } float _weight
+    }
+
+    bool IToggleableComponent.IsEnabled {
+      get; 
+      set ; 
+    }
+
+    float _weight
       = 175;
 
     /// <summary>

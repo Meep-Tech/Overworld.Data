@@ -37,7 +37,7 @@ namespace Overworld.Data {
       /// </summary>
       public virtual string DefaultPackageName {
         get;
-      } = "-Entities";
+      } = "_entities";
 
       /// <summary>
       /// Used to make a new type of entity

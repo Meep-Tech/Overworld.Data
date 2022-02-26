@@ -314,6 +314,7 @@ namespace Overworld.Data {
 
         // some types are saved along with other types so we ignore them.
         if(!archetype._ignoreDuringModReSerialization) {
+          Directory.CreateDirectory(packageDirectoryPath);
           //// tile needs to save the sprite, and the config.json
           /// get the image data
           Texture2D texture = archetype.DefaultBackground?.sprite.texture;

@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Simple.Ux.XBam.Components;
 
 namespace Overworld.Data.Entites.Components {
 
@@ -6,8 +7,9 @@ namespace Overworld.Data.Entites.Components {
   /// A component to place an execution hook on an entity interaction.
   /// </summary>
   public abstract class EntityInteractionHook : EntityHook<EntityInteractionHook> {
-    static EntityInteractionHook() {
-      Archetypes<Type>._.DisplayName = "Hook: On Interact";
-    }
+
+    ///<summary><inheritdoc/></summary>
+    public override string SimpleUxMenuTitle
+      => "Right Click Menu Items";
   }
 }

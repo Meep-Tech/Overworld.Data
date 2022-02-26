@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Simple.Ux.XBam.Components;
 
 namespace Overworld.Data.Entites.Components {
 
@@ -6,8 +7,9 @@ namespace Overworld.Data.Entites.Components {
   /// A Hook to execute something every frame
   /// </summary>
   public abstract class DoEveryFrameHook : EntityHook<DoEveryFrameHook> {
-    static DoEveryFrameHook() {
-      Archetypes<Type>._.DisplayName = "Hook: Do Every Frame";
-    }
+
+    ///<summary><inheritdoc/></summary>
+    public override string SimpleUxMenuTitle
+      => "Hook: Do Every Frame";
   }
 }

@@ -17,7 +17,7 @@ namespace Overworld.Data {
       #region Config
 
       ///<summary><inheritdoc/></summary>
-      public override bool AllowInitializationsAfterLoaderFinalization
+      protected override bool AllowInitializationsAfterLoaderFinalization
         => true;
 
       #endregion
@@ -119,7 +119,7 @@ namespace Overworld.Data {
         Namespace = config["namespace"].Value<string>();
         Version = config["version"].Value<string>();
         Tags = tags ?? config["tags"].ToObject<IEnumerable<Tag>>(
-          Models.DefaultUniverse.ModelSerializer.ModelJsonSerializer
+          Models.DefaultUniverse.ModelSerializer.JsonSerializer
         );
         Dimensions = config["namespace"].Value<(int, int)>();
       }

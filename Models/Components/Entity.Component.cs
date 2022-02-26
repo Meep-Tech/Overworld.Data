@@ -1,85 +1,74 @@
 ﻿using Meep.Tech.Data;
-using System;
-using System.Collections;
-using System.Linq;
-using System.Reflection;
+using Simple.Ux.XBam.Components;
 
 namespace Overworld.Data {
-  public partial class Entity {
+
+  /// <summary>
+  /// A component that can be added to an entity.
+  /// </summary>
+  public interface IToggleableComponent
+    : IModel.IComponent,
+      IModel.IComponent.IUseDefaultUniverse {
 
     /// <summary>
-    /// A component that can be added to an entity.
+    /// There can only be one component per type attached to an entity.
     /// </summary>
-    [Serializable]
-    public abstract class Component
-      : IModel.IComponent,
-        IComponent.IUseDefaultUniverse {
+    public interface IType
+      : IComponent.IBuilderFactory { }
 
-      /// <summary>
-      /// There can only be one component per type attached to an entity.
-      /// </summary>
-      public interface IType 
-        : IComponent.IBuilderFactory {}
+    /// <summary>
+    /// If this component is enabled.
+    /// Also used to enable and disable.
+    /// </summary>
+    public bool IsEnabled {
+      get;
+      internal set;
     }
 
     /// <summary>
-    /// A component that can be added to an entity.
+    /// Toggle if this component is enabled or disabled.
     /// </summary>
-    /// <typeparam name="TEntityComponentBaseType">Only one component of each base type can be added to a model.</typeparam>
-    public abstract partial class Component<TEntityComponentBaseType>
-      : Component,
-        IModel.IComponent<TEntityComponentBaseType>
-        where TEntityComponentBaseType : Component<TEntityComponentBaseType> 
+    void ToggleEnabled(bool? toEnabled = null)
+      => EntityComponentExtensionMethods.ToggleEnabled(this, toEnabled);
+
+    /// <summary>
+    /// Callback for on-deacivated/disabled
+    /// </summary>
+    void OnDisabled() { }
+
+    /// <summary>
+    /// Callback for on-acivated/enabled
+    /// </summary>
+    void OnEnabled() { }
+  }
+
+  /// <summary>
+  /// A component that can be added to an entity.
+  /// </summary>
+  /// <typeparam name="TComponentBase">Only one component of each base type can be added to a model.</typeparam>
+  public partial interface IToggleableComponent<TComponentBase>
+    : IToggleableComponent,
+      IModel.IComponent<TComponentBase>
+    where TComponentBase : IModel.IComponent<TComponentBase> { }
+
+  public static class EntityComponentExtensionMethods {
+
+    /// <summary>
+    /// Toggle if this component is enabled or disabled.
+    /// </summary>
+    public static void ToggleEnabled<EC>(this EC component, bool? toEnabled = null)
+      where EC : IToggleableComponent 
     {
-
-      /// <summary>
-      /// If this component is enabled.
-      /// Also used to enable and disable.
-      /// </summary>
-      public bool IsEnabled {
-        get => _isEnabled;
-        set {
-          _isEnabled = value;
-          if(_isEnabled) {
-            OnEnabled();
-          } else {
-            OnDisabled();
-          }
+      toEnabled ??= !component.IsEnabled;
+      if (component.IsEnabled != toEnabled) {
+        if (toEnabled.Value) {
+          component.OnEnabled();
+        } else {
+          component.OnDisabled();
         }
-      } bool _isEnabled;
 
-      /// <summary>
-      /// For making a new type of component.
-      /// </summary>
-      protected Component() {}
-
-      /// <summary>
-      /// Callback for on-deacivated/disabled
-      /// </summary>
-      protected virtual void OnDisabled() {}
-
-      /// <summary>
-      /// Callback for on-acivated/enabled
-      /// </summary>
-      protected virtual void OnEnabled() {}
-
-      /// <summary>
-      /// Update from a ux.
-      /// </summary>
-      /// <param name="ux">The ux for this component</param>
-      /// <param name="updatedFieldKey">(optional) a field that was changed.</param>
-      /// TODO: cache these functions.
-      protected void UpdateFromFieldChange(Simple.Ux.Data.View ux, string updatedFieldKey = null) {
-        if(updatedFieldKey is not null && ux.TryToGetField(updatedFieldKey, out var found)) {
-          if(updatedFieldKey.Contains("::")) {
-            var parts = updatedFieldKey.Split("::");
-            ((this.GetType().GetMember(parts[0]).First() as PropertyInfo).GetValue(this) as IDictionary)[parts[0]]
-              = found.Value;
-          } else
-            (this.GetType().GetMember(updatedFieldKey).First() as PropertyInfo)
-              .SetValue(this, found.Value);
-        }
-      } 
+        component.IsEnabled = toEnabled.Value;
+      }
     }
   }
 }

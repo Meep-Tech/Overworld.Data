@@ -6,8 +6,7 @@ namespace Overworld.Data.Entites.Components {
   /// This type of hook is exexuted on a key press.
   /// </summary>
   public abstract class EntityKeyPressHook : EntityHook<EntityKeyPressHook> {
-    static EntityKeyPressHook() {
-      Archetypes<Type>._.DisplayName = "Hook: Key Presses";
-    }
+    ///<summary><inheritdoc/></summary>
+    public override string SimpleUxMenuTitle => "Hook: Key Presses";
   }
 }

@@ -151,7 +151,7 @@ namespace Overworld.Data.IO {
         && options.TryGetValue(IArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting, out var moveFiles)
         && (bool)moveFiles
       ) {
-        _moveFileToFinishedImportsFolder(archetype, effectedFiles, packageName, options);
+        _moveFilesToFinishedImportsFolder(archetype.AsSingleItemEnumerable(), effectedFiles, packageName, options);
       }
       _cacheArchetype(archetype, packageName);
 
@@ -175,7 +175,7 @@ namespace Overworld.Data.IO {
           ? (bool)moveFiles
           : false
       ) {
-        _moveFileToFinishedImportsFolder(archetype, effectedFiles, packageName, options);
+        _moveFilesToFinishedImportsFolder(archetype.AsSingleItemEnumerable(), effectedFiles, packageName, options);
       }
       _cacheArchetype(archetype, packageName);
 
@@ -190,8 +190,10 @@ namespace Overworld.Data.IO {
       string name = options is not null && options.TryGetValue(IArchetypePorter.NameOverrideSetting, out var nameObj)
          ? (string)nameObj
          : null;
+      string packageName = options is not null && options.TryGetValue(IArchetypePorter.PagkageNameOverrideSetting, out var pkgNameObj)
+         ? (string)pkgNameObj
+         : null;
 
-      string packageName = null;
       string resourceKey = GetResourceKeyFromFileLocationAndSettings(externalFileLocation, ref packageName, ref name);
       if(_cachedResources.ContainsKey(resourceKey)) {
         int incrementor = 0;
@@ -212,14 +214,11 @@ namespace Overworld.Data.IO {
           ? (bool)moveFiles
           : false
       ) {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype, packageName);
-          _moveFileToFinishedImportsFolder(archetype, new string[] { externalFileLocation }, packageName, options);
-        }
-      } else {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype, packageName);
-        }
+        _moveFilesToFinishedImportsFolder(archetypes, new string[] { externalFileLocation }, packageName, options);
+      }
+
+      foreach(TArchetype archetype in archetypes) {
+        _cacheArchetype(archetype, packageName);
       }
 
       return archetypes;
@@ -257,15 +256,12 @@ namespace Overworld.Data.IO {
           ? (bool)moveFiles
           : false
       ) {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype, packageName);
-          _moveFileToFinishedImportsFolder(archetype, effectedFiles, packageName, options);
-        }
-      } else {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype, packageName);
-        }
+        _moveFilesToFinishedImportsFolder(archetypes, effectedFiles, packageName, options);
       }
+      foreach(TArchetype archetype in archetypes) {
+        _cacheArchetype(archetype, packageName);
+      }
+
 
       return archetypes;
     }
@@ -298,14 +294,11 @@ namespace Overworld.Data.IO {
         && options.TryGetValue(IArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting, out var moveFiles)
         && (bool)moveFiles
       ) {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype);
-          _moveFileToFinishedImportsFolder(archetype, externalFileLocations, packageName, options);
-        }
-      } else {
-        foreach(TArchetype archetype in archetypes) {
-          _cacheArchetype(archetype);
-        }
+        _moveFilesToFinishedImportsFolder(archetypes, externalFileLocations, packageName, options);
+      }
+
+      foreach(TArchetype archetype in archetypes) {
+        _cacheArchetype(archetype);
       }
 
       return archetypes;
@@ -412,15 +405,15 @@ namespace Overworld.Data.IO {
           }
         }
 
-        packageName ??= nameFolderKey.Trim('.');
+        packageName ??= packageFolderKey.Trim('.');
         name ??= nameFolderKey.Trim('.');
       }
 
-      if(string.IsNullOrWhiteSpace(packageName)) {
+      if(!string.IsNullOrWhiteSpace(packageName)) {
         key += packageName + "::";
       }
 
-      return key + (name ??= Path.GetFileNameWithoutExtension(externalFileLocation));
+      return key + (name = Path.GetFileNameWithoutExtension(name ?? externalFileLocation));
     }
 
     /// <summary>
@@ -483,16 +476,21 @@ namespace Overworld.Data.IO {
       }
     }
 
-    void _moveFileToFinishedImportsFolder(TArchetype compiled, string[] fileNames, string packageName = null, Dictionary<string, object> options = null) {
-      string exportFolder = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName, IArchetypePorter.FinishedImportsFolderName, packageName ?? compiled.DefaultPackageName);
-      if(packageName is not null) {
-        exportFolder = Path.Combine(exportFolder, compiled.DefaultPackageName);
+    void _moveFilesToFinishedImportsFolder(IEnumerable<TArchetype> compiledArchetypes, string[] fileNames, string packageName = null, Dictionary<string, object> options = null) {
+      /// Save files that are re-compiled for speed to the mod folder:
+      foreach(TArchetype compiled in compiledArchetypes) {
+        _serializeArchetypeToModFiles(compiled, GetFolderForArchetype(compiled));
       }
 
-      // save files that are re-compiled for speed to the mod folder:
-      _serializeArchetypeToModFiles(compiled, GetFolderForArchetype(compiled));
+      /// Move the old files to exports
+      string exportFolder
+        = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName, IArchetypePorter.FinishedImportsFolderName, packageName ?? compiledArchetypes.First().DefaultPackageName);
+      if(packageName is not null) {
+        exportFolder = Path.Combine(exportFolder, compiledArchetypes.First().DefaultPackageName);
+      }
 
       // Move each untouched file to output:
+      Directory.CreateDirectory(exportFolder);
       foreach(string fileName in fileNames) {
         System.IO.File.Move(fileName, Path.Combine(exportFolder, Path.GetFileName(fileName)));
         // TODO: these any file lookups could probably be quicker:
@@ -504,9 +502,9 @@ namespace Overworld.Data.IO {
         }
 
         if(packageName is not null) {
-          if(!Directory.GetParent(fileName).Parent.GetFiles().Any()) {
+          if(!Directory.GetParent(fileName).GetFiles().Any() && !Directory.GetParent(fileName).GetDirectories().Any()) {
             if(Directory.GetParent(fileName).Name == IArchetypePorter.ImportFolderName) {
-              throw new Exception($"Folder deleting wrong");
+              throw new Exception($"Folder deleting gone wrong");
             }
             Directory.GetParent(fileName).Parent.Delete();
           }

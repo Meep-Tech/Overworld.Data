@@ -6,8 +6,8 @@ namespace Overworld.Data.Entites.Components {
   /// A hook executred on the world being started by the server.
   /// </summary>
   public class EntityOnStartHook : EntityHook<EntityOnStartHook> {
-    static EntityOnStartHook() {
-      Archetypes<Type>._.DisplayName = "Hook: On World StartUp";
-    }
+    ///<summary><inheritdoc/></summary>
+    public override string SimpleUxMenuTitle 
+      => "Hook: On World StartUp";
   }
 }
