@@ -7,7 +7,9 @@ namespace Overworld.Data.Entities.Components {
   /// <summary>
   /// Some basic physical stats for all characters
   /// </summary>
-  public class BasicPhysicalStats : IToggleableComponent<BasicPhysicalStats> {
+  public class BasicPhysicalStats : IDefaultToggleableEntityComponent<BasicPhysicalStats> {
+
+    bool IToggleableComponent.IsEnabled { get; set; }
 
     /// <summary>
     /// Height, in "Tiles" (1.75 is average)
@@ -58,49 +60,41 @@ namespace Overworld.Data.Entities.Components {
         }
         _weight = toSet;
       }
-    }
-
-    bool IToggleableComponent.IsEnabled {
-      get; 
-      set ; 
-    }
-
-    float _weight
+    } float _weight 
       = 175;
 
     /// <summary>
     /// Add an Func to be executed when the width is changed.
-    /// </summary>
     /// Params:
     /// old width,
     /// new width.
     /// Returns:
     /// extra width to add.
-    /// </param>
+    /// </summary>
     public readonly DelegateCollection<Func<float, float, float>>
       OnWidthChangeFuncs
         = new();
 
     /// <summary>
     /// Add an Func to be executed when the weight is changed.
-    /// </summary>
     /// Params:
     /// old weight,
     /// new weight.
     /// Returns:
     /// extra weight to add.
-    /// </param>    
+    /// </summary>
     public readonly DelegateCollection<Func<float, float, float>>
       OnWeightChangeFuncs
         = new();
 
+    /// <summary>
     /// Add an Func to be executed when the height is changed.
-    /// </summary>
     /// Params:
     /// old height,
     /// new height.
     /// Returns:
     /// extra height 
+    /// </summary>
     public readonly DelegateCollection<Func<float, float, float>>
       OnHeightChangeFuncs
         = new();

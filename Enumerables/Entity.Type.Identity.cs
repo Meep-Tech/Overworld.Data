@@ -1,6 +1,6 @@
 ﻿namespace Overworld.Data {
   public partial class Entity {
-    public abstract partial class Type {
+    public partial class Type {
       /// <summary>
       /// Ids for entity types
       /// </summary>

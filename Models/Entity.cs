@@ -35,13 +35,6 @@ namespace Overworld.Data {
     }
 
     /// <summary>
-    /// Availible sprite animations by tag
-    /// </summary>
-    public TagedCollection<Animation.Tag, Animation> Animations {
-      get;
-    } = new TagedCollection<Animation.Tag, Animation>();
-
-    /// <summary>
     /// X Bam Builder
     /// </summary>
     /// <param name="builder"></param>

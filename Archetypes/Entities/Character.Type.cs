@@ -9,10 +9,9 @@ namespace Overworld.Data {
   public partial class Character {
 
     /// <summary>
-    /// The base archetype for character entities
+    /// The base archetype for player character entities
     /// </summary>
     [Branch]
-    [DoNotBuildInInitialLoad]
     public new class Type : Entity.Type {
 
       ///<summary><inheritdoc/></summary>
@@ -28,11 +27,8 @@ namespace Overworld.Data {
           (nameof(BasicPhysicalStats.Weight), 120)
         ));
 
-      /// <summary>
-      /// For X Bam
-      /// </summary>
-      protected Type(string resourceId, Identity id) 
-        : base(resourceId, id ?? new Identity("Character")) {}
+      Type() 
+        : base("Character", "Character", "_base") {}
 
       /// <summary>
       /// Make a new character with just a name.

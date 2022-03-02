@@ -28,7 +28,8 @@ namespace Overworld.Data {
   /// A sprite animation.
   /// </summary>
   public partial class Animation
-    : Model<Animation, Animation.Type>.WithComponents {
+    : Model<Animation, Animation.Type>.WithComponents, IEntityDisplayableSprite {
+    string IUnique.Id { get; set; }
 
     /// <summary>
     /// Custom Entity-Setable tags for this animation. 

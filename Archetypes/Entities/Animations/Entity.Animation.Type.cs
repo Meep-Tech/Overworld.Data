@@ -83,8 +83,8 @@ namespace Overworld.Data {
       /// <summary>
       /// The package name that this came from.
       /// </summary>
-      public virtual string PackageName {
-        get => _packageName ?? DefaultPackageName;
+      public virtual string PackageKey {
+        get => _packageName ?? DefaultPackageKey;
         protected set => _packageName = value;
       }
       string _packageName;
@@ -92,7 +92,7 @@ namespace Overworld.Data {
       /// <summary>
       /// The package name that this came from.
       /// </summary>
-      public virtual string DefaultPackageName {
+      public virtual string DefaultPackageKey {
         get;
       } = "_entity_animations";
 
@@ -141,7 +141,7 @@ namespace Overworld.Data {
       /// These can be built by files
       /// </summary>
       [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-      public partial class Type : Data.Animation.Type {
+      public partial class Type : Data.Animation.Type, IEntityDisplayableSprite.IArchetype {
 
         #region Archetype Data Fields
 
@@ -186,6 +186,9 @@ namespace Overworld.Data {
 
           return entityAnimation;
         }
+
+        IEntityDisplayableSprite IEntityDisplayableSprite.IArchetype.Make()
+          => Make();
       }
     }
   }

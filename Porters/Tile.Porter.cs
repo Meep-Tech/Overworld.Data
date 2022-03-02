@@ -122,7 +122,6 @@ namespace Overworld.Data {
       /// - PixelsPerTileOption: the pixel diameter of imported tiles.
       /// - (optional) InPlaceTileCallbackOption: Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
       /// </param>
-      /// <returns></returns>
       protected override IEnumerable<Type> _importArchetypesFromExternalFile(
         string externalFileLocation,
         string resourceKey,

@@ -5,7 +5,7 @@
       /// <summary>
       /// Tags used to find entity specific animations
       /// </summary>
-      public partial class Tag : Data.Animation.Tag {
+      public partial class Tag : Data.Tag {
 
         /// <summary>
         /// Represents a sprite action used to move a number of tiles from your current position.

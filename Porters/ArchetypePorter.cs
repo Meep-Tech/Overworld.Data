@@ -10,10 +10,30 @@ using UnityEngine;
 namespace Overworld.Data.IO {
 
   /// <summary>
+  /// Base statics and accesability stuff for non generic ArchetypePorter access.
+  /// </summary>
+  public abstract class ArchetypePorter {
+
+    /// <summary>
+    /// The root mod folder.
+    /// </summary>
+    public static readonly string RootModsFolder 
+      = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName);
+  }
+
+  /// <summary>
   /// used to im/export archetypes of a specific type from mods
   /// </summary>
-  public abstract class ArchetypePorter<TArchetype> : IArchetypePorter
+  public abstract class ArchetypePorter<TArchetype> : ArchetypePorter, IArchetypePorter
     where TArchetype : Meep.Tech.Data.Archetype, IPortableArchetype {
+
+    /// <summary>
+    /// The default instance of this type of archetype porter.
+    /// </summary>
+    public static ArchetypePorter<TArchetype> DefaultInstance {
+      get;
+      private set;
+    }
 
     /// <summary>
     /// Key for the name value in the config
@@ -68,11 +88,13 @@ namespace Overworld.Data.IO {
     /// </summary>
     readonly Dictionary<string, Dictionary<string, TArchetype>> _cachedResourcesByPackage
       = new();
+
     /// <summary>
     /// Make a new type of archetype porter with inheritance
     /// </summary>
     protected ArchetypePorter(User currentUser) {
       CurrentUser = currentUser;
+      DefaultInstance ??= this;
     }
 
     /// <summary>
@@ -309,7 +331,7 @@ namespace Overworld.Data.IO {
     /// </summary>
     public string GetFolderForArchetype(IPortableArchetype portableArchetype) {
       TArchetype archetype = (TArchetype)portableArchetype;
-      return GetFolderForModItem(archetype.Id.Name, archetype.PackageName);
+      return GetFolderForModItem(archetype.Id.Name, archetype.PackageKey);
     }
 
     /// <summary>
@@ -332,7 +354,7 @@ namespace Overworld.Data.IO {
     /// <inheritdoc/>
     /// </summary>
     public string GetFolderForModItem(string name, string packageName = null) {
-      string modFolder = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName);
+      var modFolder = RootModsFolder;
       if(packageName is null) {
         modFolder = Path.Combine(modFolder, DefaultPackageName, name.Replace(".", "/"));
       } else {
@@ -352,7 +374,7 @@ namespace Overworld.Data.IO {
         return false;
       }
 
-      string oldFolderName = GetFolderForModItem(oldName, archetype.PackageName);
+      string oldFolderName = GetFolderForModItem(oldName, archetype.PackageKey);
       Directory.CreateDirectory(newFolderName);
       _copyDirectory(oldFolderName, newFolderName, true);
       return true;
@@ -371,7 +393,7 @@ namespace Overworld.Data.IO {
         directoryInfo.EnumerateDirectories().ForEach(subDirectory => subDirectory.Delete(true));
       }
 
-      string oldFolderName = GetFolderForModItem(oldName, archetype.PackageName);
+      string oldFolderName = GetFolderForModItem(oldName, archetype.PackageKey);
       Directory.CreateDirectory(newFolderName);
       _copyDirectory(oldFolderName, newFolderName, true);
     }
@@ -484,9 +506,9 @@ namespace Overworld.Data.IO {
 
       /// Move the old files to exports
       string exportFolder
-        = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName, IArchetypePorter.FinishedImportsFolderName, packageName ?? compiledArchetypes.First().DefaultPackageName);
+        = Path.Combine(Application.persistentDataPath, IArchetypePorter.ModFolderName, IArchetypePorter.FinishedImportsFolderName, packageName ?? compiledArchetypes.First().DefaultPackageKey);
       if(packageName is not null) {
-        exportFolder = Path.Combine(exportFolder, compiledArchetypes.First().DefaultPackageName);
+        exportFolder = Path.Combine(exportFolder, compiledArchetypes.First().DefaultPackageKey);
       }
 
       // Move each untouched file to output:

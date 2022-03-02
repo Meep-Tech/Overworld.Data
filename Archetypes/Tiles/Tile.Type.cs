@@ -23,7 +23,7 @@ namespace Overworld.Data {
       /// <summary>
       /// The default package name for archetyps of this type
       /// </summary>
-      public virtual string DefaultPackageName {
+      public virtual string DefaultPackageKey {
         get;
       } = "_tiles";
 
@@ -44,7 +44,7 @@ namespace Overworld.Data {
       /// <summary>
       /// The package name that this came from.
       /// </summary>
-      public virtual string PackageName {
+      public virtual string PackageKey {
         get;
         protected set;
       }
@@ -109,7 +109,7 @@ namespace Overworld.Data {
         packageName
       )) {
         ResourceKey = resourceKey;
-        PackageName = packageName;
+        PackageKey = packageName;
         DefaultBackground = backgroundImage;
         if(DefaultBackground is not null) {
           BackgroundImageHashKey = imageHashKey

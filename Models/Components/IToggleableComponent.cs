@@ -1,7 +1,6 @@
 ﻿using Meep.Tech.Data;
 
 namespace Overworld.Data {
-
   /// <summary>
   /// A component that can be added to an entity.
   /// </summary>
@@ -39,35 +38,5 @@ namespace Overworld.Data {
     /// Callback for on-acivated/enabled
     /// </summary>
     void OnEnabled() { }
-  }
-
-  /// <summary>
-  /// A component that can be added to an entity.
-  /// </summary>
-  /// <typeparam name="TComponentBase">Only one component of each base type can be added to a model.</typeparam>
-  public partial interface IToggleableComponent<TComponentBase>
-    : IToggleableComponent,
-      IModel.IComponent<TComponentBase>
-    where TComponentBase : IModel.IComponent<TComponentBase> { }
-
-  public static class EntityComponentExtensionMethods {
-
-    /// <summary>
-    /// Toggle if this component is enabled or disabled.
-    /// </summary>
-    public static void ToggleEnabled<EC>(this EC component, bool? toEnabled = null)
-      where EC : IToggleableComponent 
-    {
-      toEnabled ??= !component.IsEnabled;
-      if (component.IsEnabled != toEnabled) {
-        if (toEnabled.Value) {
-          component.OnEnabled();
-        } else {
-          component.OnDisabled();
-        }
-
-        component.IsEnabled = toEnabled.Value;
-      }
-    }
   }
 }

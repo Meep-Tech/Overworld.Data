@@ -4,11 +4,11 @@
       get;
     }
 
-    public string PackageName {
+    public string PackageKey {
       get;
     }
 
-    public string DefaultPackageName {
+    public string DefaultPackageKey {
       get;
     }
   }
