@@ -23,10 +23,5 @@
       get => _height;
       set => _height = value;
     }
-
-    bool IToggleableComponent.IsEnabled {
-      get;
-      set;
-    }
   }
 }

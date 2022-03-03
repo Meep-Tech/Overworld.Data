@@ -11,6 +11,11 @@ public interface IReadOnlyTagedCollection<TTag, TValue> : IEnumerable<KeyValuePa
   IEnumerable<TValue> this[TTag tag] { get; }
 
   /// <summary>
+  /// Fetch all the tags for a given value
+  /// </summary>
+  IEnumerable<TTag> this[TValue value] { get; }
+
+  /// <summary>
   /// All distinct tags
   /// </summary>
   IEnumerable<TTag> Tags { get; }

@@ -24,7 +24,7 @@ namespace Overworld.Data.IO {
   /// <summary>
   /// used to im/export archetypes of a specific type from mods
   /// </summary>
-  public abstract class ArchetypePorter<TArchetype> : ArchetypePorter, IArchetypePorter
+  public abstract partial class ArchetypePorter<TArchetype> : ArchetypePorter, IArchetypePorter
     where TArchetype : Meep.Tech.Data.Archetype, IPortableArchetype {
 
     /// <summary>
@@ -44,6 +44,17 @@ namespace Overworld.Data.IO {
     /// Key for the package name value in the config
     /// </summary>
     public const string PackageNameConfigKey = "packageName";
+
+    /// <summary>
+    /// Key for the description in the config
+    /// </summary>
+    public const string DescriptionConfigKey = "description";
+
+    /// <summary>
+    /// Used for a list of tags in json configs
+    /// </summary>
+    public const string TagsConfigOptionKey
+      = "tags";
 
     /// <summary>
     /// The default package name for archetyps of this type
@@ -99,6 +110,7 @@ namespace Overworld.Data.IO {
 
     /// <summary>
     /// Used to import arhetypes of this kind from one uploaded file
+    /// TODO: these should return a list of all processed system files.
     /// </summary>
     protected abstract IEnumerable<TArchetype> _importArchetypesFromExternalFile(
       string externalFileLocation,
@@ -111,6 +123,7 @@ namespace Overworld.Data.IO {
 
     /// <summary>
     /// Used to import arhetypes of this kind from multiple uploaded files
+    /// TODO: these should return a list of all processed system files.
     /// </summary>
     protected virtual IEnumerable<TArchetype> _importArchetypesFromExternalFiles(
       string[] externalFileLocations,
@@ -576,7 +589,6 @@ namespace Overworld.Data.IO {
         } else
           return new JObject();
       }
-
 
     #endregion
   }

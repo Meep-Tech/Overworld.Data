@@ -43,10 +43,14 @@ public class BasicHeightMapTile : Overworld.Data.Tile.Type {
   ) : base(
     $"{(heightValue != 0 ? Mathf.Abs(heightValue).ToString() + "t " : "Sea Level")} {(heightValue > 0 ? "Above Sea Level" : heightValue == 0 ? "" : heightValue < 0 ? "Below Sea Level" : "")}",
     $"BasicHeightSetter-{heightValue}",
-    null,
-    backgroundImage,
-    backgroundImage?.sprite.texture.imageContentsHash,
-    heightValue
+    $"_base",
+    Newtonsoft.Json.Linq.JObject.FromObject(new Dictionary<string, object> {
+      {Overworld.Data.Tile.Porter.TileHeightConfigKey, heightValue }
+    }),
+    new Dictionary<string, object> {
+      {nameof(Overworld.Data.Tile.Type.DefaultBackground), backgroundImage },
+      {nameof(Overworld.Data.Tile.Type.BackgroundImageHashKey), backgroundImage?.sprite.texture.imageContentsHash },
+    }
   ) {
     Description = $"Used to set just a tile's height to {Id.Name}; {heightValue}t.";
     TypesByHeight.Add(heightValue, this);

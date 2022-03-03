@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Meep.Tech.Collections.Generic;
 using Overworld.Data.Entities.Components;
 using System;
 using System.Collections.Generic;
@@ -21,8 +22,8 @@ namespace Overworld.Data {
         };
 
       ///<summary><inheritdoc/></summary>
-      protected override HashSet<Func<IBuilder, IModel.IComponent>> InitialUnlinkedModelComponentCtors
-        => base.InitialUnlinkedModelComponentCtors.Append(builder => Components<BasicPhysicalStats>.BuilderFactory.Make(
+      protected override Dictionary<string, Func<IBuilder, IModel.IComponent>> DefaultModelComponentCtors 
+        => _DefaultModelComponentCtors ??= base.DefaultModelComponentCtors.Append(Components<BasicPhysicalStats>.Key, builder => Components<BasicPhysicalStats>.BuilderFactory.Make(
           (nameof(BasicPhysicalStats.Height), 2),
           (nameof(BasicPhysicalStats.Weight), 120)
         ));

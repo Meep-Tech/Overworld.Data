@@ -7,11 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 
 namespace Overworld.Data {
   public partial class Entity {
 
+    /// <summary>
+    /// ised to inport and expoert entities to and from mod folders
+    /// </summary>
     public class Porter : ArchetypePorter<Entity.Type> {
       
       /// <summary>
@@ -23,10 +25,17 @@ namespace Overworld.Data {
         };
 
       /// <summary>
-      /// Key for intial components added to an entity from a config.
+      /// Key for intial model components added to an entity from a config.
       /// </summary>
       public const string EntityExtraInitialModelComponentsConfigOptionKey
         = "initialModelComponents";
+
+      /// <summary>
+      /// Key for intial archetype components added to an entity from a config.
+      /// TODO: implement
+      /// </summary>
+      public const string EntityExtraInitialArchetypeComponentsConfigOptionKey
+        = "initialArchetypeComponents";
 
       /// <summary>
       /// An archetype to use instead of the default.
@@ -41,6 +50,27 @@ namespace Overworld.Data {
         = "defaultSpriteImageFile";
 
       /// <summary>
+      /// The default sprite for an entity
+      /// TOOD: implement
+      /// </summary>
+      public const string SpriteIconsConfigOptionKey
+        = "spriteIcons";
+
+      /// <summary>
+      /// The default sprite for an entity
+      /// TOOD: implement
+      /// </summary>
+      public const string ExtraSpriteDisplayOptionsConfigOptionKey
+        = "otherSpriteDisplayOptions";
+
+      /// <summary>
+      /// The default sprite for an entity
+      /// TOOD: implement
+      /// </summary>
+      public const string SpriteAnimationsConfigOptionKey
+        = "spriteAnimations";
+
+      /// <summary>
       /// Can be used to set the spawn location
       /// </summary>
       public const string SpawnLocationImportOptionKey
@@ -51,9 +81,6 @@ namespace Overworld.Data {
       /// </summary>
       public const string AddBasicPhysicsImportOptionKey
         = "AddBasicPhysics";
-
-      static Dictionary<string, System.Type>
-        _entityComponentDefaultBuilderCache = new();
 
       ///<summary><inheritdoc/></summary>
       public override string DefaultPackageName
@@ -68,17 +95,17 @@ namespace Overworld.Data {
         => base.ValidConfigOptionKeys
           .Append(EntityBaseArchetypeConfigOptionKey)
           .Append(DefaultSpriteConfigOptionKey)
-          .Append(EntityExtraInitialModelComponentsConfigOptionKey);
+          .Append(SpriteAnimationsConfigOptionKey)
+          .Append(SpriteIconsConfigOptionKey)
+          .Append(ExtraSpriteDisplayOptionsConfigOptionKey)
+          .Append(EntityExtraInitialModelComponentsConfigOptionKey)
+          .Append(EntityExtraInitialArchetypeComponentsConfigOptionKey);
 
       ///<summary><inheritdoc/></summary>
       public override HashSet<string> ValidImportOptionKeys 
         => base.ValidImportOptionKeys
           .Append(SpawnLocationImportOptionKey)
           .Append(AddBasicPhysicsImportOptionKey);
-
-      protected override IEnumerable<Type> _importArchetypesFromExternalFiles(string[] externalFileLocations, string resourceKey, string name, string packageKey = null, Dictionary<string, object> options = null) {
-        return base._importArchetypesFromExternalFiles(externalFileLocations, resourceKey, name, packageKey, options);
-      }
 
       /// <summary>
       /// If it's a single file and it's a config, it's added as an invisible entity(ghost icon)
@@ -94,7 +121,6 @@ namespace Overworld.Data {
       ) {
         Type @return = null;
         string extension;
-        Entity.Icon.Type defaultEntityIcon = null;
         /// import just from a config json file
         if ((extension = Path.GetExtension(externalFileLocation).ToLower()) == ".json") {
           JObject config = TryToGetConfig(externalFileLocation.AsSingleItemEnumerable(), out _);
@@ -106,9 +132,7 @@ namespace Overworld.Data {
             config
           );
 
-          IEnumerable<Func<IBuilder, IModel.IComponent>> initialModelComponents
-            = _tryToGetInitialModelComponentTypeConstructors(config);
-
+          options ??= new();
           /// try to get an default icon, or set it to default(ghost) and make it so it doesn't display by default either.
           string iconInfoString;
           // check fist if we have a string to fetch the icon.
@@ -119,16 +143,16 @@ namespace Overworld.Data {
           ) {
             Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
             if (Icon.Porter._isValidImageImportString(iconInfoString, out _)) {
-              defaultEntityIcon = iconImporter.ImportAndBuildNewArchetypeFromFile(
+              options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
                 iconInfoString,
                 options
                   .Append(NameConfigKey, name)
                   .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
                   .ToDictionary(e => e.Key, e => e.Value)
-              ).FirstOrDefault();
+              ).FirstOrDefault());
             } // if it's not a valid URI for an image import, check if it's an known archetype:
             else {
-              defaultEntityIcon = Entity.Icon.Types.TryToGet(iconInfoString);
+              options.Add(nameof(SpriteDisplayOptions.DefaultIconType), Entity.Icon.Types.TryToGet(iconInfoString));
             }
           }
 
@@ -141,10 +165,10 @@ namespace Overworld.Data {
               }, null);
               if (ctor is not null && ctor.IsFamily) {
                 @return =
-                  ((Entity.Type)ctor.Invoke(new object[] {
+                  (Entity.Type)ctor.Invoke(new object[] {
                     resourceKey,
                     new Type.Identity(name, packageKey)
-                  })).AppendModelComponentConstructors(initialModelComponents.ToHashSet());
+                  });
               } else throw new ArgumentException(
                   $"Cannot use Archetype of Entity.Type: {foundArchetypeName} as a template for a new of Entity.Type, it does not have a protected constructor that takes a resource key and an Entity.Type.Identity."
                 );
@@ -157,109 +181,131 @@ namespace Overworld.Data {
               new Entity.Type(
                 name,
                 resourceKey,
-                packageKey
-              ).AppendModelComponentConstructors(initialModelComponents.ToHashSet());
+                packageKey,
+                config,
+                options
+              );
           }
         }
         /// check if it's a valid image type and import that way instead
         else if (ValidDefaultImageExtensions.Contains(extension)) {
-          @return =
-            new Entity.Type(
-              name,
-              resourceKey,
-              packageKey
-            );
-
+          // import it as the default icon if it was found:
           Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
           if (Icon.Porter._isValidImageImportString(externalFileLocation, out _)) {
-            defaultEntityIcon = iconImporter.ImportAndBuildNewArchetypeFromFile(
+            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
               externalFileLocation,
               options
                 .Append(NameConfigKey, name)
                 .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
                 .ToDictionary(e => e.Key, e => e.Value)
-            ).FirstOrDefault();
-          }
-        }
+            ).FirstOrDefault());
 
-        /// apply the found image.
-        if (defaultEntityIcon is not null) {
-          @return.SetDefaultIconType(defaultEntityIcon);
-        }
-
-        /// options
-        if (@return is not null) {
-          // add spawn location if provided by the options.
-          if (options.TryGetValue(SpawnLocationImportOptionKey, out object value) && value is (int x, int y, int height)) {
-            @return.AppendModelComponentConstructors(
-              new Func<IBuilder, IModel.IComponent>(_ => new SimpleSpawnLocation {
-                X = x,
-                Y = y,
-                Height = height
-              }).AsSingleItemEnumerable().ToHashSet()
-            );
-          }
-
-          // add basic physics if requested by the options.
-          if (options.TryGetValue(AddBasicPhysicsImportOptionKey, out object ifShould) && ifShould is true) {
-            @return.AppendModelComponentConstructors(
-              new Func<IBuilder, IModel.IComponent>(
-                builder => (IModel.IComponent)
-                  Components<SimplePhysics>.BuilderFactory.Make(builder)
-              ).AsSingleItemEnumerable().ToHashSet()
-            );
-          }
-        }
-
-        return new[] {
-          @return
-        };
-      }
-
-      protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
-        throw new NotImplementedException();
-      }
-
-      IEnumerable<Func<IBuilder, IModel.IComponent>> _tryToGetInitialModelComponentTypeConstructors(JObject config) {
-        JToken initialModelComponentsList = config.TryGetValue<JToken>(EntityExtraInitialModelComponentsConfigOptionKey);
-        List<Func<IBuilder, IModel.IComponent>> componentConstructors = new();
-        if (initialModelComponentsList is JObject objectBasedList) {
-          foreach (KeyValuePair<string, JToken> child in objectBasedList) {
-            // if the value is a json object, try to deserialize it as the given component type.
-            if (child.Value is JObject componentJson) {
-              componentConstructors.Add(builder => {
-                var component = (IModel.IComponent)
-                  IComponent.FromJson(componentJson, _getComponentType(child.Key), withConfigurationParameters: builder);
-                return component;
-              });
-            } // if it's not an json object, then we just use the key to make a default
-            else {
-              componentConstructors.Add(
-                _ => _getDefaultComponentBuilderFor(child.Key).Make()
+            @return =
+              new Entity.Type(
+                name,
+                resourceKey,
+                packageKey,
+                new JObject(),
+                options
               );
-            }
           }
-        } else if (initialModelComponentsList is JArray simpleArrayOfTypes) {
-          foreach (string componentTypeName in simpleArrayOfTypes.Values<string>()) {
-            componentConstructors.Add(
-              _ => _getDefaultComponentBuilderFor(componentTypeName).Make()
-            );
-          }
-        } else throw new System.ArgumentException(EntityExtraInitialModelComponentsConfigOptionKey);
+        }
 
-        return componentConstructors;
+        return @return
+          .AsSingleItemEnumerable();
       }
 
-      static IComponent.IBuilderFactory _getDefaultComponentBuilderFor(string componentTypeName)
-        => Meep.Tech.Data.Components.GetBuilderFactoryFor(
-          _getComponentType(componentTypeName)
+      ///<summary><inheritdoc/></summary>
+      protected override IEnumerable<Type> _importArchetypesFromExternalFiles(
+        string[] externalFileLocations,
+        string resourceKey,
+        string name,
+        string packageKey = null,
+        Dictionary<string, object> options = null
+      ) {
+        Type @return = null;
+        JObject config = TryToGetConfig(externalFileLocations, out string configFileLocation);
+
+        resourceKey = CorrectBaseKeysAndNamesForConfigValues(
+          configFileLocation,
+          ref name,
+          ref packageKey,
+          config
         );
 
-      static System.Type _getComponentType(string componentTypeName) 
-        => _entityComponentDefaultBuilderCache.TryGetValue(componentTypeName, out System.Type found)
-          ? found
-          : _entityComponentDefaultBuilderCache[componentTypeName] =
-            TypeExtensions.GetTypeByFullName(componentTypeName);
+        options ??= new();
+        /// try to get an default icon, or set it to default(ghost) and make it so it doesn't display by default either.
+        string iconInfoString;
+        // check fist if we have a string to fetch the icon.
+        if (((iconInfoString = config.TryGetValue<string>(DefaultSpriteConfigOptionKey)?.ToLower()) != null)
+          // if that fails, try to get a file with the desired name from the same folder as the config.
+          || ((iconInfoString = externalFileLocations.Where(file => Path.GetFileName(file).StartsWith($"{name}."))
+            .Where(f => ValidDefaultImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null)
+          // without the same name, get the first matching image
+          || ((iconInfoString = externalFileLocations.Where(f => ValidDefaultImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null)
+        ) {
+          Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
+          if (Icon.Porter._isValidImageImportString(iconInfoString, out _)) {
+            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
+              iconInfoString,
+              options
+                .Append(NameConfigKey, name)
+                .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
+                .ToDictionary(e => e.Key, e => e.Value)
+            ).FirstOrDefault());
+          } // if it's not a valid URI for an image import, check if it's an known archetype:
+          else {
+            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), Entity.Icon.Types.TryToGet(iconInfoString));
+          }
+        }
+
+        // if there's an archetype base to use as a template, try to use it with the default ctor, and add any components:
+        if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, out JToken foundArchetypeName)) {
+          if (Entity.Types.TryToGet(foundArchetypeName.Value<string>(), out var foundBaseArchetype)) {
+            var ctor = foundBaseArchetype.Type.GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new System.Type[] {
+                typeof(string),
+                typeof(Entity.Type.Identity)
+              }, null);
+            if (ctor is not null && ctor.IsFamily) {
+              @return =
+                (Entity.Type)ctor.Invoke(new object[] {
+                    resourceKey,
+                    new Type.Identity(name, packageKey)
+                });
+            } else throw new ArgumentException(
+                $"Cannot use Archetype of Entity.Type: {foundArchetypeName} as a template for a new of Entity.Type, it does not have a protected constructor that takes a resource key and an Entity.Type.Identity."
+              );
+          } else throw new ArgumentException(
+            $"Cannot find an Archetype of type Entity.Type with key: {foundArchetypeName}."
+          );
+        } // no template, make a basic type.
+        else {
+          @return =
+            new Entity.Type(
+              name,
+              resourceKey,
+              packageKey,
+              config,
+              options
+            );
+        }
+
+        return @return.AsSingleItemEnumerable();
+      }
+
+      ///<summary><inheritdoc/></summary>
+      protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
+        List<string> createdFiles = new();
+
+        // Save the config file:
+        string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
+        JObject config = archetype.GenerateConfig();
+
+        File.WriteAllText(configFileName, config.ToString());
+        createdFiles.Add(configFileName);
+
+        return createdFiles.ToArray();
+      }
     }
   }
 }

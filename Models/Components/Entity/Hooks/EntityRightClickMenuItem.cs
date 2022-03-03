@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Overworld.Data.Entites.Components {
   class EntityRightClickMenuAdditions 
-    : IDefaultEntityComponent<EntityRightClickMenuAdditions>,
+    : IDefaultToggleableEntityComponent<EntityRightClickMenuAdditions>,
     IHasSimpleUxComponentEditMenu<EntityRightClickMenuAdditions>
   {
 

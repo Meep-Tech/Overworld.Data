@@ -30,6 +30,11 @@ public class TagedCollection<TTag, TValue> : ITagedCollection<TTag, TValue> {
     get => _valuesByTag[tag];
   }
 
+  ///<summary><inheritdoc/></summary>
+  public IEnumerable<TTag> this[TValue value] {
+    get => _tagsByValue[value];
+  }
+
   #endregion
 
   #region Add

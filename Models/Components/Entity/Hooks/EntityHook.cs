@@ -7,7 +7,7 @@ namespace Overworld.Data.Entites.Components {
   /// A type of component that uses a hook to execute some code from the perspective of an entity.
   /// </summary>
   public abstract class EntityHook<TEntityHookBase> :
-      IDefaultEntityComponent<TEntityHookBase>,
+      IDefaultToggleableEntityComponent<TEntityHookBase>,
       IHasSimpleUxComponentEditMenu<TEntityHookBase>,
       IEntityHookComponent 
     where TEntityHookBase : EntityHook<TEntityHookBase> 

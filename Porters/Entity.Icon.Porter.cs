@@ -13,10 +13,47 @@ namespace Overworld.Data {
   public partial class Entity {
 
     public partial class Icon {
+
+      /// <summary>
+      /// Imports entity icons
+      /// </summary>
       public class Porter : ArchetypePorter<Icon.Type> {
 
+        /// <summary>
+        /// Types of image import string formats.
+        /// </summary>
+        public enum ImageImportStringType {
+          /// <summary>
+          /// The file string is absolute in the local filesystem
+          /// </summary>
+          LocalAbsolute = 0,
+          /// <summary>
+          /// The file string is relative to the config file in the local filesystem
+          /// </summary>
+          LocalRelative = 1,
+          /// <summary>
+          /// The file string is an http location on the net.
+          /// </summary>
+          Http = 2
+        }
+
+        /// <summary>
+        /// Json config key for the image file to use for this icon.
+        /// </summary>
         public const string ImageFileLocationConfigOptionKey
           = "imageFile";
+
+        /// <summary>
+        /// json config Key for the tile diameter in pixels per tile for size calculation 
+        /// </summary>
+        public const string PixelsPerTileConfigKey
+          = "pixelsPerTileDiameter";
+
+        /// <summary>
+        /// import options Key for the tile diameter in pixels per tile for size calculation 
+        /// </summary>
+        public const string PixelsPerTileImportOptionKey
+          = "PixelsPerTileDiameter";
 
         /// <summary>
         /// Valid image extensions
@@ -26,17 +63,28 @@ namespace Overworld.Data {
             { ".png" }
           };
 
+        ///<summary><inheritdoc/></summary>
         public override string DefaultPackageName {
           get;
         } = "_icons";
 
+        ///<summary><inheritdoc/></summary>
         public override HashSet<string> ValidConfigOptionKeys
           => base.ValidConfigOptionKeys
-            .Append(ImageFileLocationConfigOptionKey);
+            .Append(ImageFileLocationConfigOptionKey)
+            .Append(PixelsPerTileConfigKey)
+            .Append(TagsConfigOptionKey);
 
+        ///<summary><inheritdoc/></summary>
+        public override HashSet<string> ValidImportOptionKeys 
+          => base.ValidImportOptionKeys
+            .Append(PixelsPerTileImportOptionKey);
+
+        ///<summary><inheritdoc/></summary>
         public Porter(User currentUser)
           : base(currentUser) { }
 
+        ///<summary><inheritdoc/></summary>
         protected override IEnumerable<Type> _importArchetypesFromExternalFile(
           string externalFileLocation,
           string resourceKey,
@@ -55,6 +103,10 @@ namespace Overworld.Data {
               config
             );
 
+            options ??= new();
+            options[PixelsPerTileImportOptionKey] = config.TryGetValue<int?>(PixelsPerTileConfigKey)
+              ?? (int)options[PixelsPerTileImportOptionKey];
+
             Sprite sprite = null;
             string imageFile;
             if ((imageFile = config.TryGetValue<string>(ImageFileLocationConfigOptionKey)?.ToLower()) != null) {
@@ -62,16 +114,22 @@ namespace Overworld.Data {
               if (sprite is null) {
                 throw new ArgumentException($"Could not get a sprite from image location key: {imageFile}, relative to config: {externalFileLocation}");
               }
+              options[nameof(Type.Sprite)] = sprite;
             } // else try to get a file with the desired name from the same folder as the config.
             else if ((imageFile = new DirectoryInfo(externalFileLocation).GetFiles($"{name}.*")
               .Where(f => ValidImageExtensions.Contains(f.Extension)).FirstOrDefault()?.FullName) != null
             ) {
               sprite = _getSpriteFromImageImportString(imageFile, importStringType: ImageImportStringType.LocalAbsolute, options: options);
+              options[nameof(Type.Sprite)] = sprite;
             }
 
-            return new Entity.Icon.Type(name, resourceKey, packageKey) {
-              Sprite = sprite
-            }.AsSingleItemEnumerable();
+            return new Entity.Icon.Type(
+              name, 
+              resourceKey,
+              packageKey,
+              config,
+              options
+            ).AsSingleItemEnumerable();
           }
           // if it's a valid type of image file:
           else if (ValidImageExtensions.Contains(extension)) {
@@ -79,23 +137,98 @@ namespace Overworld.Data {
             if (sprite is null) {
               throw new ArgumentException($"Could not get a sprite from image at: {externalFileLocation}");
             }
-            return new Entity.Icon.Type(name, resourceKey, packageKey) {
-              Sprite = sprite
-            }.AsSingleItemEnumerable();
+
+            options ??= new();
+            options[nameof(Type.Sprite)] = sprite;
+
+            return new Entity.Icon.Type(
+              name,
+              resourceKey,
+              packageKey,
+              new JObject(),
+              options
+            ).AsSingleItemEnumerable();
           } else throw new ArgumentException($"{externalFileLocation} is not a valid image type for an Icon. Valid types include: {string.Join(",", ValidImageExtensions)}");
         }
 
-        protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
-          throw new System.NotImplementedException();
+        ///<summary><inheritdoc/></summary>
+        protected override IEnumerable<Type> _importArchetypesFromExternalFiles(
+          string[] externalFileLocations,
+          string resourceKey,
+          string name,
+          string packageKey = null,
+          Dictionary<string, object> options = null
+        ) {
+          /// Config
+          JObject config = TryToGetConfig(externalFileLocations, out string configFile);
+          resourceKey = CorrectBaseKeysAndNamesForConfigValues(
+            configFile,
+            ref name,
+            ref packageKey,
+            config
+          );
+
+          options ??= new();
+          options[PixelsPerTileImportOptionKey] = config.TryGetValue<int?>(PixelsPerTileConfigKey)
+            ?? (int)options[PixelsPerTileImportOptionKey];
+
+          // sprite:
+          Sprite sprite = null;
+          string imageFileLocation;
+          if ((imageFileLocation = config.TryGetValue<string>(ImageFileLocationConfigOptionKey)?.ToLower()) != null) {
+            sprite = _getSpriteFromImageImportString(imageFileLocation, new DirectoryInfo(configFile).FullName, options: options);
+            if (sprite is null) {
+              throw new ArgumentException($"Could not get a sprite from image location key: {imageFileLocation}, relative to config: {configFile}");
+            }
+            options[nameof(Type.Sprite)] = sprite;
+          } // else try to get a file with the desired name.
+          else if ((imageFileLocation = externalFileLocations.Where(file => Path.GetFileName(file).StartsWith($"{name}."))
+            .Where(f => ValidImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null
+          ) {
+            sprite = _getSpriteFromImageImportString(imageFileLocation, importStringType: ImageImportStringType.LocalAbsolute, options: options);
+            options[nameof(Type.Sprite)] = sprite;
+          } // else try to get the first file with the correct type.
+          else if ((imageFileLocation = externalFileLocations.Where(f => ValidImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null) {
+            sprite = _getSpriteFromImageImportString(imageFileLocation, importStringType: ImageImportStringType.LocalAbsolute, options: options);
+            options[nameof(Type.Sprite)] = sprite;
+          }
+
+          return new Entity.Icon.Type(
+            name,
+            resourceKey,
+            packageKey,
+            config,
+            options
+          ).AsSingleItemEnumerable();
         }
 
-        /// <summary>
-        /// Types of image import string formats.
-        /// </summary>
-        public enum ImageImportStringType {
-          LocalAbsolute = 0,
-          LocalRelative = 1,
-          Http = 2
+        ///<summary><inheritdoc/></summary>
+        protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
+          List<string> createdFiles = new();
+
+          Directory.CreateDirectory(packageDirectoryPath);
+          // Save the sprite to PNG
+          byte[] imageData = null;
+          if (archetype.Sprite != null) {
+            imageData = archetype.Sprite.texture?.EncodeToPNG();
+            if (imageData is not null) {
+              string imageFileName = Path.Combine(packageDirectoryPath, "_texture.png");
+              File.WriteAllBytes(imageFileName, imageData);
+              createdFiles.Add(imageFileName);
+            }
+          }
+
+          // Save the config file:
+          string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
+          JObject config = archetype.GenerateConfig();
+          if (imageData is not null) {
+            config.Add(ImageFileLocationConfigOptionKey, "./_texture.png");
+          }
+
+          File.WriteAllText(configFileName, config.ToString());
+          createdFiles.Add(configFileName);
+
+          return createdFiles.ToArray();
         }
 
         internal static bool _isValidImageImportString(string imageFileLocationString, out ImageImportStringType? importStringType) {
@@ -150,8 +283,8 @@ namespace Overworld.Data {
                           texture.width,
                           texture.height
                         ),
-                        new Vector2(0.5f, 0.5f)
-                      // TODO: implement pixels per unity adjustment for world size options and config options
+                        new Vector2(0.5f, 0.5f),
+                        (int)options[PixelsPerTileImportOptionKey]
                       );
                     }
                   }

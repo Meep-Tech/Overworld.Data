@@ -1,4 +1,7 @@
 ﻿using Meep.Tech.Data;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Overworld.Data {
@@ -8,7 +11,7 @@ namespace Overworld.Data {
     /// Archetypes for tiles.
     /// </summary>
     [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
-    public partial class Type : Archetype<Tile, Tile.Type>.WithDefaultParamBasedModelBuilders, IPortableArchetype {
+    public partial class Type : Archetype<Tile, Tile.Type>.WithDefaultParamBasedModelBuilders, IPortableArchetype, ITaggable {
 
       #region Archetype Config
 
@@ -75,8 +78,9 @@ namespace Overworld.Data {
       /// If the default background should be used as the tile image in world.
       /// If false, the DefaultBackground image is just for use in the editor ui.
       /// </summary>
-      public virtual bool UseDefaultBackgroundAsInWorldTileImage
-        => true;
+      public virtual bool UseDefaultBackgroundAsInWorldTileImage {
+        get;
+      }
 
       /// <summary>
       /// If this tile archetype should link itself to a tile when used to make that tile in the world
@@ -95,27 +99,92 @@ namespace Overworld.Data {
         = false;
 
       /// <summary>
+      /// Default tags for this tile type.
+      /// </summary>
+      public virtual IEnumerable<Tag> DefaultTags {
+        get => _DefaultTags ?? new();
+      } /**<summary> The backing field used to initialize and override DefaultTags </summary>**/
+      protected HashSet<Tag> _DefaultTags {
+        get => _defaultTags;
+        set => _defaultTags = value;
+      } HashSet<Tag> _defaultTags;
+
+      /// <summary>
+      /// Can be used to extend this to a new, non-templateable type.
+      /// </summary>
+      protected Type(
+        string name,
+        string resourceKey,
+        string packageKey
+      ) : base(new Identity(name, packageKey)) {
+        ResourceKey = resourceKey;
+        PackageKey = packageKey;
+      }
+
+      /// <summary>
       /// Used to make new tiles via import.
       /// </summary>
       protected internal Type(
         string name,
         string resourceKey,
-        string packageName = null,
-        UnityEngine.Tilemaps.Tile backgroundImage = null,
-        Hash128? imageHashKey = null,
-        float? defaultHeight = null
-      ) : base(new Identity(
-        name,
-        packageName
-      )) {
-        ResourceKey = resourceKey;
-        PackageKey = packageName;
-        DefaultBackground = backgroundImage;
+        string packageKey,
+        JObject config,
+        Dictionary<string, object> importOptionsAndObjects
+      ) : this(name, resourceKey, packageKey) {
+        _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
+        Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
+        UseDefaultBackgroundAsInWorldTileImage = importOptionsAndObjects.TryGetValue(nameof(UseDefaultBackgroundAsInWorldTileImage), out object useBgAsInWorld)
+            ? (bool)useBgAsInWorld
+            : config.TryGetValue(Porter.UseDefaultBackgroundAsInWorldTileImageConfigKey, @default: true);
+        DefaultBackground = importOptionsAndObjects.TryGetValue(nameof(DefaultBackground), out object backgroundImage)
+          ? backgroundImage as UnityEngine.Tilemaps.Tile
+          : null;
         if(DefaultBackground is not null) {
-          BackgroundImageHashKey = imageHashKey
-            ?? DefaultBackground.GetTileHash();
+          BackgroundImageHashKey = importOptionsAndObjects.TryGetValue(nameof(BackgroundImageHashKey), out object hashKey)
+            ? (Hash128)hashKey
+            : DefaultBackground.GetTileHash();
         }
-        DefaultHeight = defaultHeight ?? DefaultHeight;
+        DefaultHeight = config.TryGetValue(Porter.TileHeightConfigKey, out JToken value)
+          ? value.Value<float>()
+          :  DefaultHeight;
+      }
+
+      ///<summary><inheritdoc/></summary>
+      public JObject GenerateConfig() {
+        JObject config = new() {
+          {
+            Porter.NameConfigKey,
+            JToken.FromObject(Id.Name)
+          },
+          {
+            Porter.PackageNameConfigKey,
+            JToken.FromObject(PackageKey)
+          },
+          {
+            Porter.ImportModeConfigKey,
+            JToken.FromObject(Porter.BackgroundImageImportMode.Individual)
+          }
+        };
+
+        if (DefaultHeight is not null) {
+          config.Add(Porter.TileHeightConfigKey, DefaultHeight);
+        }
+        if (Description is not null) {
+          config.Add(Porter.DescriptionConfigKey, Description);
+        }
+        if (UseDefaultBackgroundAsInWorldTileImage is false) {
+          config.Add(Porter.UseDefaultBackgroundAsInWorldTileImageConfigKey, false);
+        }
+
+        // config image data
+        if (DefaultBackground?.sprite.texture != null) {
+          config.Add(Porter.PixelsPerTileConfigKey, JToken.FromObject(DefaultBackground.sprite.pixelsPerUnit));
+          config.Add(Porter.ImportModeConfigKey, JToken.FromObject(Porter.BackgroundImageImportMode.Individual));
+        }
+
+        config.Add(Porter.TagsConfigOptionKey, JToken.FromObject(DefaultTags));
+
+        return config;
       }
     }
   }

@@ -124,6 +124,11 @@ namespace Overworld.Data {
         Dimensions = config["namespace"].Value<(int, int)>();
       }
 
+      ///<summary><inheritdoc/></summary>
+      public JObject GenerateConfig() {
+        throw new System.NotImplementedException();
+      }
+
       /// <summary>
       /// Import a type from a config and data
       /// </summary>

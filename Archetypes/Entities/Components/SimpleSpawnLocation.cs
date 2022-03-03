@@ -3,7 +3,7 @@
   /// <summary>
   /// When attached to an entity in world, it means this entity will spawn at this location when the world starts.
   /// </summary>
-  public class SimpleSpawnLocation : IDefaultEntityComponent<SimpleSpawnLocation> {
+  public class SimpleSpawnLocation : IDefaultToggleableEntityComponent<SimpleSpawnLocation> {
 
     /// <summary>
     /// E/W location in world to spawn at

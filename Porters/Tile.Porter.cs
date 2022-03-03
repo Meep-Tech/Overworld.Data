@@ -42,6 +42,8 @@ namespace Overworld.Data {
           .Append(PixelsPerTileConfigKey)
           .Append(ImportModeConfigKey)
           .Append(SheetSizeInTilesConfigKey)
+          .Append(TagsConfigOptionKey) 
+          .Append(UseDefaultBackgroundAsInWorldTileImageConfigKey)
           .Append(TileHeightConfigKey);
 
       ///<summary><inheritdoc/></summary>
@@ -100,6 +102,12 @@ namespace Overworld.Data {
         = "sizeInTiles";
 
       /// <summary>
+      /// Key used to pass in how large the tile sheet is in tiles
+      /// </summary>
+      public const string UseDefaultBackgroundAsInWorldTileImageConfigKey
+        = "useDefaultBackgroundAsInWorldTileImage";
+
+      /// <summary>
       /// The config key for the mode used to import the image.
       /// </summary>
       public const string ImportModeConfigKey 
@@ -144,11 +152,8 @@ namespace Overworld.Data {
             name,
             packageKey,
             resourceKey,
-            null,
-            null,
-            config.TryGetValue(TileHeightConfigKey, out JToken value)
-              ? value.Value<float>()
-              : null
+            config,
+            options ?? new()
           )};
 
         } // if it's just an image file:
@@ -174,14 +179,17 @@ namespace Overworld.Data {
           all.ForEach(tile => {
             string currentName = $"{name}{(index is not null ? $"-{++index}" : "")}";
             string currentKey = $"{resourceKey}{(index is not null ? $"-{index}" : "")}";
+            Dictionary<string, object> localOptions = new(options ?? new());
+            localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
+            localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
             types.Add(
               tile.Key,
               new Tile.Type(
                 currentName,
                 currentKey,
                 packageKey,
-                tile.Value,
-                tile.Key
+                new JObject(),
+                localOptions
               ) {
                 LinkArchetypeToTileDataOnSet = false
               }
@@ -230,7 +238,7 @@ namespace Overworld.Data {
           throw new System.ArgumentException($"Could not find a valid image file for Tile type creation in directory: {Path.GetDirectoryName((externalFileLocations.First()))}.\n Full path: {externalFileLocations.First()}");
         }
 
-        if(config?.HasValues ?? false) {
+        if(config.HasValues) {
           CorrectBaseKeysAndNamesForConfigValues(tileMap, ref packageKey, ref name, config);
         }
 
@@ -260,36 +268,41 @@ namespace Overworld.Data {
             dimensionsInTiles
           );
 
-        bool hasHeight = config.TryGetValue(TileHeightConfigKey, out JToken heightValue);
-
+        bool hasHeight = config.ContainsKey(TileHeightConfigKey);
         bool hasSpecialValues = hasHeight;
-        var @return = all.Select(tile =>
-          new Tile.Type(
-            name + (hasSpecialValues ? " (BG)" : ""),
-            resourceKey,
-            packageKey,
-            tile.Value,
-            tile.Key
-          ) {
-            LinkArchetypeToTileDataOnSet = false,
-            _ignoreDuringModReSerialization = hasSpecialValues
+        // One for the bg
+        Dictionary<string, Type> @return = all.ToDictionary(tile => tile.Value.name + (hasSpecialValues ? " (BG)" : ""), tile => {
+          Dictionary<string, object> localOptions = new(options ?? new());
+          localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
+          localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
+          return new Tile.Type(
+              name + (hasSpecialValues ? " (BG)" : ""),
+              resourceKey,
+              packageKey,
+              config,
+              localOptions
+            ) {
+              LinkArchetypeToTileDataOnSet = false,
+              _ignoreDuringModReSerialization = hasSpecialValues
+           };
           }
         );
 
         /// configs with special values and a background make more than one archetype.
-        // One for the BG and one with the BG and other linked values.
-        if(hasSpecialValues) {
-          @return.Concat(all.Select(tile =>
-            new Tile.Type(
+        // and one with the BG and other linked values.
+        if (hasSpecialValues) {
+          @return.Merge(all.ToDictionary(tile => tile.Value.name, tile => {
+            Dictionary<string, object> localOptions = new(options ?? new());
+            localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
+            localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
+            return new Tile.Type(
               name,
               resourceKey,
               packageKey,
-              tile.Value,
-              tile.Key,
-              heightValue?.Value<float>()
-            ) {
-            }
-        ));
+              config,
+              localOptions
+            );
+          }));
         }
 
 
@@ -297,12 +310,12 @@ namespace Overworld.Data {
           locations.ForEach(e =>
             ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
               e.Key,
-              @return.First()
+              @return[all[e.Value].name]
             )
           );
         }
 
-        return @return;
+        return @return.Values;
       }
 
       /// <summary>
@@ -320,30 +333,23 @@ namespace Overworld.Data {
           byte[] imageData = texture?.EncodeToPNG();
 
           // pixels to png
-          if(imageData is not null) {
-            string imageFileName = Path.Combine(packageDirectoryPath, "_texture.png");
+          string imageFileName;
+          if (imageData is not null) {
+            imageFileName = Path.Combine(packageDirectoryPath, "_texture.png");
+            File.WriteAllBytes(imageFileName, imageData); 
             createdFiles.Add(imageFileName);
-            File.WriteAllBytes(imageFileName, imageData);
           }
 
           /// config
           string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
-          createdFiles.Add(configFileName);
-          JObject config = new() {
-            {
-              NameConfigKey,
-              JToken.FromObject(archetype.Id.Name)
-            }
-          };
-
-          // config image data
-          if(imageData is not null) {
-            config.Add(PixelsPerTileConfigKey, JToken.FromObject(archetype.DefaultBackground.sprite.pixelsPerUnit));
-            config.Add(ImportModeConfigKey, JToken.FromObject(Porter.BackgroundImageImportMode.Individual));
+          JObject config = archetype.GenerateConfig();
+          if (imageData is not null) {
+            config.Add("imageFile", "./_texture.png");
           }
 
           // write the config
           File.WriteAllText(configFileName, config.ToString());
+          createdFiles.Add(configFileName);
         }
 
         return createdFiles.ToArray();

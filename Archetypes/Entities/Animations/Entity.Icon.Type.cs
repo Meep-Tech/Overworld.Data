@@ -1,4 +1,7 @@
 ﻿using Meep.Tech.Data;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Overworld.Data {
@@ -8,18 +11,17 @@ namespace Overworld.Data {
       /// <summary>
       /// A type of entity icon.
       /// </summary>
-      public class Type : 
-        Archetype<Icon, Icon.Type>, 
+      public class Type :
+        Archetype<Icon, Icon.Type>,
         IEntityDisplayableSprite.IArchetype,
-        IPortableArchetype
-      {
+        IPortableArchetype,
+        ITaggable {
 
         /// <summary>
         /// The in-game sprite this icon type represents
         /// </summary>
         public Sprite Sprite {
           get;
-          internal set;
         }
 
         /// <summary>
@@ -34,7 +36,7 @@ namespace Overworld.Data {
         /// </summary>
         public virtual string PackageKey {
           get => _packageKey ?? DefaultPackageKey;
-          protected internal set => _packageKey = value;
+          protected set => _packageKey = value;
         } string _packageKey;
 
         /// <summary>
@@ -44,10 +46,75 @@ namespace Overworld.Data {
           get;
         } = "_icons";
 
-        internal Type(string name, string resourceKey, string packageKey = null) 
-          : base(new Identity(name, packageKey)) {
+        /// <summary>
+        /// The tile height
+        /// </summary>
+        public virtual string Description {
+          get;
+          protected set;
+        }
+
+        /// <summary>
+        /// Default tags for this icon type.
+        /// </summary>
+        public virtual IEnumerable<Tag> DefaultTags {
+          get => _DefaultTags ?? new();
+          internal init => _defaultTags = value.ToHashSet();
+        } /**<summary> The backing field used to initialize and override DefaultTags </summary>**/
+        protected HashSet<Tag> _DefaultTags {
+          get => _defaultTags; 
+          set => _defaultTags = value;
+        } HashSet<Tag> _defaultTags;
+
+        /// <summary>
+        /// Can be used to extend this to a new, non-templateable type.
+        /// </summary>
+        protected Type(
+          string name,
+          string resourceKey,
+          string packageKey
+        ) : base(new Identity(name, packageKey)) {
           ResourceKey = resourceKey;
-          _packageKey = packageKey;
+          PackageKey = packageKey;
+        }
+
+        /// <summary>
+        /// Used to make new tiles via import.
+        /// </summary>
+        protected internal Type(
+          string name,
+          string resourceKey,
+          string packageKey,
+          JObject config,
+          Dictionary<string, object> importOptionsAndObjects
+        ) : this(name, resourceKey, packageKey) {
+          Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
+          _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
+          Sprite = importOptionsAndObjects.TryGetValue(nameof(Sprite), out var found)
+            ? found as Sprite
+            : null;
+        }
+
+        ///<summary><inheritdoc/></summary>
+        public JObject GenerateConfig() {
+          JObject config = new() {
+            {
+              Porter.NameConfigKey,
+              JToken.FromObject(Id.Name)
+            },{
+              Porter.PackageNameConfigKey,
+              JToken.FromObject(PackageKey)
+            }
+          };
+
+          // config image data
+          if (Sprite?.texture != null) {
+            config.Add(Porter.PixelsPerTileConfigKey, JToken.FromObject(Sprite.pixelsPerUnit));
+          }
+            
+          config.Add(Porter.TagsConfigOptionKey, JToken.FromObject(DefaultTags));
+
+          return config;
         }
 
         IEntityDisplayableSprite IEntityDisplayableSprite.IArchetype.Make()

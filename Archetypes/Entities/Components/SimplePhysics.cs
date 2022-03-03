@@ -6,7 +6,7 @@ namespace Overworld.Data.Entities.Components {
   /// <summary>
   /// When attached to an entity in world, it means this entity will spawn at this location when the world starts.
   /// </summary>
-  public class SimplePhysics : IDefaultEntityComponent<SimplePhysics> {
+  public class SimplePhysics : IDefaultToggleableEntityComponent<SimplePhysics> {
 
     /// <summary>
     /// The parent of this component
