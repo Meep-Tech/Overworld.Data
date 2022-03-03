@@ -12,7 +12,7 @@ All platforms also allow you to change the Archetype Upload settings in the edit
 ### Single Mode
 Single mode assumes all files being uploaded belong to just one Archetype.
 ### Batch Mode
-Batch mode assumes any files or folders being uploaded could contain multiple Archetypes. In the case of a set of multiple files, the program will try to match each [[config.json]] file to a set of assets, and then will go through the remaining assets in order as if they were each an Archetype. This last step may vary depending on the type of Archetype being uploaded though. When folders are uploaded via a batch, the batch assumes each folder is an individual Archetype first, and then may use un-processed files for other Archetypes later that request them.
+Batch mode assumes any files or folders being uploaded could contain multiple Archetypes. In the case of a set of multiple files, the program will try to match each [[config.json]] file to a set of assets, and then will go through the remaining assets in order as if they were each an Archetype. This last step may vary depending on the type of Archetype being uploaded though. When folders are uploaded via a batch, the batch assumes each folder is an individual Archetype first, and then may use un-processed files for other Archetypes later that request them. This means 'loose' Assets with no associated config within these nested sub-folders will be ignored by default.
 See [[#Mod Files Folder Structure]] below for details on how mods are uploaded in a from a folder structure.
 ## Import via Launcher
 Importing via the Launcher is similar to [[#In-Game]], but is done in a special [[Archetype Examiner]] menu. Batch or Single upload are both available here as well. Only some platforms support drag and drop. 
@@ -32,9 +32,10 @@ The `mods` folder itself can contain several special sub-folders and files:
 #### Mod Package Folder Structure
 Mod packages are seperated into Archetype Sub-Folders with the naming scheem:
 `_[ARCHETYPE-SUB-FOLDER-NAME]/`. Any assets not within these Sub-Folders in a [[Mod Package]] will be ignored. 
-Each Archetype Sub-Folder can contain loose Assets and [[config.json]] files, or individual Archetype Sub-Folders.
+Each Archetype Sub-Folder can contain Assets and [[config.json]] files, or more nested Archetype Sub-Folders.
+Assets with no associated Config.Json within these sub-folders will be ignored by default, and will not be processed as 'loose' Archetypes, like they would be if placed in the root of the Archetype Sub Folder.
 # Default Naming of Imported Archetypes
-Archetypes can be provided a specific "name" via their [[config.json]]. If no name is provided, the name will be taken from the name of the dominant asset used to make this Archetype (usually other than the config.json), or from the name of the current folder, if the asset is in a non-special Sub-Folder of either the [[Mods Folder]] or a [[Mod Package]].
+Archetypes can be provided a specific "name" via their [[config.json]]. If no name is provided, the name will be taken from the name of the dominant asset used to make this Archetype (usually other than the config.json), or from the name of the current folder if the asset is in a non-special Sub-Folder of either the [[Mods Folder]] or a [[Mod Package]].
 ## Package Names
 Archetypes can be provided a specific package to be added to via their [[config.json]].
 Package names are taken, by default; from the parent-most folder that imported assets are placed in. Loose assets that go though the import and packaging proccess are  placed into a [[Mod Package]] folder under the [[Mods Folder]] root with the naming scheme: "\[USERNAME]'s Custom Assets"
