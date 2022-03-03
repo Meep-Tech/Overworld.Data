@@ -1,0 +1,1 @@
+Overworld is, at it's heart, a social "Chat" focused game, so the Chat functionality is of high focus and importance.

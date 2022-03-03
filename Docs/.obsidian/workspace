@@ -1,0 +1,136 @@
+{
+  "main": {
+    "id": "b681ef9a4be25a9d",
+    "type": "split",
+    "children": [
+      {
+        "id": "e5b6e03002365862",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "Importing Assets/_index.md",
+            "mode": "preview"
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "7a6f4c19d2143527",
+    "type": "split",
+    "children": [
+      {
+        "id": "a7d4638720f906bf",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b03bf70139d4d244",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "37b0486b1eb2598a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "eae8641dfdc98eda",
+    "type": "split",
+    "children": [
+      {
+        "id": "00124246d562d429",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e505453514d0a140",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Importing Assets/_index.md",
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "f73d5cc035b71a3f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Importing Assets/_index.md"
+              }
+            }
+          },
+          {
+            "id": "fb2e20eadc66caa6",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "e672a2ffbe72a031",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Importing Assets/_index.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "e5b6e03002365862",
+  "lastOpenFiles": [
+    "Importing Assets/_index.md",
+    "Importing Assets/Archetypes/Tiles.md",
+    "Importing Assets/Archetype Porter.md",
+    "Chat/Overview.md",
+    "Chat/_index.md",
+    "Overworld Scripting Language (OWS)/_index.md",
+    "The Overworld/_index.md",
+    "Overworld.md",
+    "Simple Ux.md",
+    "Overworld Scripting Language (OWS)/Commands/Base Overworld Commands/_Planned Commands.md"
+  ]
+}
