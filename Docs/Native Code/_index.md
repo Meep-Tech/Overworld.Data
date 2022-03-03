@@ -1,0 +1,1 @@
+The Native Code and all [[Plugin]]s for Overworld are written in C#. Mods however, can be written in C#, Lua ( #Not_Yet_Implemented ), and [[Overworld Scripting Language (OWS)]].

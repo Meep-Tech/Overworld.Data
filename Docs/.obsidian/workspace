@@ -4,13 +4,13 @@
     "type": "split",
     "children": [
       {
-        "id": "e5b6e03002365862",
+        "id": "65164cefaf98c3bb",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Importing Assets/_index.md",
-            "mode": "preview"
+            "file": "Importing Assets/Archetypes/Entities.md",
+            "mode": "source"
           }
         }
       }
@@ -39,7 +39,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#Not_Yet_Implemented",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Importing Assets/_index.md",
+                "file": "Importing Assets/Archetypes/Entities.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -85,7 +85,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Importing Assets/_index.md"
+                "file": "Importing Assets/Archetypes/Entities.md"
               }
             }
           },
@@ -106,7 +106,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Importing Assets/_index.md",
+                "file": "Importing Assets/Archetypes/Entities.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -120,17 +120,17 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "e5b6e03002365862",
+  "active": "65164cefaf98c3bb",
   "lastOpenFiles": [
+    "Importing Assets/Archetypes/Entities.md",
     "Importing Assets/_index.md",
-    "Importing Assets/Archetypes/Tiles.md",
-    "Importing Assets/Archetype Porter.md",
-    "Chat/Overview.md",
-    "Chat/_index.md",
-    "Overworld Scripting Language (OWS)/_index.md",
     "The Overworld/_index.md",
-    "Overworld.md",
-    "Simple Ux.md",
-    "Overworld Scripting Language (OWS)/Commands/Base Overworld Commands/_Planned Commands.md"
+    "Native Code/_index.md",
+    "Importing Assets/Archetypes/Tiles.md",
+    "Overworld Scripting Language (OWS)/_index.md",
+    "Overworld Scripting Language (OWS)/Operations.md",
+    "Overworld Scripting Language (OWS)/Syntax.md",
+    "Chat/Overview.md",
+    "Chat/_index.md"
   ]
 }

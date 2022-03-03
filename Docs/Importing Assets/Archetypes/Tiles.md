@@ -1,4 +1,6 @@
-# Tile.Type
+# [[Tile]].Type
+**Base Archetype Class:** `Overworld.Data.Tile.Type`
+**Porter Class:** `Overworld.Data.Tile.Porter`
 **Archetype Sub-Folder:** `_tiles`
 ## Valid File Configurations
 ### Single File:
