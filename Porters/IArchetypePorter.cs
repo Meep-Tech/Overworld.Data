@@ -1,6 +1,6 @@
 ﻿using Meep.Tech.Data;
 using System.Collections.Generic;
-
+/*
 namespace Overworld.Data {
 
   /// <summary>
@@ -123,4 +123,4 @@ namespace Overworld.Data {
     /// </summary>
     bool TryToMoveRenamedArchetypeFolder(string oldName, IPortableArchetype archetype);
   }
-}
+}*/

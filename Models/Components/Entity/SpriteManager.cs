@@ -93,11 +93,11 @@ namespace Overworld.Data.Entities.Components {
         _icons.Value.Add(tags, icon);
         tags = tags
           .Append(IconPreferenceSearchTag)
-          .Append(Tag.Still);
+          .Append(Entity.Animation.BuiltInTag.Still);
       } else if (displayableSpriteAnimationOrIcon is Animation animation) {
         _animations.Value.Add(tags, animation);
         tags = tags
-          .Append(Tag.Animated);
+          .Append(Entity.Animation.BuiltInTag.Animated);
       }
 
       _allSpriteOptions.Value.Add(tags, displayableSpriteAnimationOrIcon);

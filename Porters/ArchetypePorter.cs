@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace Overworld.Data.IO {
+/*namespace Overworld.Data.IO {
 
   /// <summary>
   /// Base statics and accesability stuff for non generic ArchetypePorter access.
@@ -593,3 +593,4 @@ namespace Overworld.Data.IO {
     #endregion
   }
 }
+*/

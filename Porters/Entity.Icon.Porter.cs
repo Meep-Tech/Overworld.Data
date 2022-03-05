@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using Overworld.Data.IO;
 using System;
@@ -82,7 +83,7 @@ namespace Overworld.Data {
 
         ///<summary><inheritdoc/></summary>
         public Porter(User currentUser)
-          : base(currentUser) { }
+          : base(() => currentUser.UniqueName) { }
 
         ///<summary><inheritdoc/></summary>
         protected override IEnumerable<Type> _importArchetypesFromExternalFile(
@@ -203,7 +204,7 @@ namespace Overworld.Data {
         }
 
         ///<summary><inheritdoc/></summary>
-        protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
+        protected override string[] SerializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
           List<string> createdFiles = new();
 
           Directory.CreateDirectory(packageDirectoryPath);
@@ -212,7 +213,7 @@ namespace Overworld.Data {
           if (archetype.Sprite != null) {
             imageData = archetype.Sprite.texture?.EncodeToPNG();
             if (imageData is not null) {
-              string imageFileName = Path.Combine(packageDirectoryPath, "_texture.png");
+              string imageFileName = Path.Combine(packageDirectoryPath, "texture.png");
               File.WriteAllBytes(imageFileName, imageData);
               createdFiles.Add(imageFileName);
             }
@@ -222,7 +223,7 @@ namespace Overworld.Data {
           string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
           JObject config = archetype.GenerateConfig();
           if (imageData is not null) {
-            config.Add(ImageFileLocationConfigOptionKey, "./_texture.png");
+            config.Add(ImageFileLocationConfigOptionKey, "./texture.png");
           }
 
           File.WriteAllText(configFileName, config.ToString());

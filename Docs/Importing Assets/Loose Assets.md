@@ -1,0 +1,6 @@
+"Loose Assets" in the context of [[Porter]]s and [[Importing Assets/_index|Importing Assets]], are a list of Asset and Json files that are provided to a [[Porter]] with no other context.
+
+In batch uploads, Loose Asset files are eached proccessed one at a time, in alphabetical order, as seperate Archetype Import attempts. Config json files are prioritized and are initially each treated as if they represent one Archetype Import attempt. Asset files are also proccessed one at a time after the configs, but Asset files are removed from the proccessing pool if another Loose Asset in the list uses it. 
+For example: If one loose asset is a [[config.json]] that calls to use another .png image asset in the list, the other Loose Assets won't be able to search for that asset as a default when it's their turn, and this loose .png will also not be proccessed as an Archetype of it's own. Later configs can still access these proccessed Assets by filename however.
+
+Assets with filenames that begin with `.`, or begin with `_` and are not named `_config.json` are ignored by default.

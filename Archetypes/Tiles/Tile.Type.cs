@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
@@ -185,6 +186,10 @@ namespace Overworld.Data {
         config.Add(Porter.TagsConfigOptionKey, JToken.FromObject(DefaultTags));
 
         return config;
+      }
+
+      void IPortableArchetype.Unload() {
+        throw new System.NotImplementedException();
       }
     }
   }

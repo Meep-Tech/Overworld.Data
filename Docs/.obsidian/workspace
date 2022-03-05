@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Importing Assets/Archetypes/Entities.md",
+            "file": "Importing Assets/Loose Assets.md",
             "mode": "source"
           }
         }
@@ -68,7 +68,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Importing Assets/Archetypes/Entities.md",
+                "file": "Importing Assets/Loose Assets.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -85,7 +85,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Importing Assets/Archetypes/Entities.md"
+                "file": "Importing Assets/Loose Assets.md"
               }
             }
           },
@@ -106,7 +106,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Importing Assets/Archetypes/Entities.md",
+                "file": "Importing Assets/Loose Assets.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -117,20 +117,19 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "active": "65164cefaf98c3bb",
   "lastOpenFiles": [
-    "Importing Assets/Archetypes/Entities.md",
+    "Importing Assets/Loose Assets.md",
+    "Importing Assets/Single Archetype Folder.md",
     "Importing Assets/_index.md",
+    "Importing Assets/Archetypes/Entities.md",
+    "Importing Assets/Archetypes/Tiles.md",
     "The Overworld/_index.md",
     "Native Code/_index.md",
-    "Importing Assets/Archetypes/Tiles.md",
     "Overworld Scripting Language (OWS)/_index.md",
     "Overworld Scripting Language (OWS)/Operations.md",
-    "Overworld Scripting Language (OWS)/Syntax.md",
-    "Chat/Overview.md",
-    "Chat/_index.md"
+    "Overworld Scripting Language (OWS)/Syntax.md"
   ]
 }

@@ -1,0 +1,5 @@
+A "Single Archetype Folder" in the context of [[Porter]]s and [[Importing Assets/_index|Importing Assets]], is a folder provided to the [[Porter]] by name that will only have it's Asset and Json file contents searched for a single Archetype Import attempt. This means any files not mentioned by the [[config.json]], or assets grabbed by default by the [[Porter]] will be ignored, and will not be built as [[Loose Assets]].
+
+Items in these folders that begin with `.`, or begin with `_` and are not named `_config.json` are ignored by default when the flat files of the directory are collected for upload.
+
+There is also a recusion mode, that will consider all valid sub-directories of the Single Archetype Folder as their own Single Archetype Folders, and will proccess them seperately and accordingly.

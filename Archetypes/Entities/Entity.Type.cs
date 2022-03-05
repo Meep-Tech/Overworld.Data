@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using Overworld.Data.Entities.Components;
 using System;
@@ -378,6 +379,10 @@ namespace Overworld.Data {
           ? found
           : _entityComponentDefaultBuilderCache[componentTypeName] =
             TypeExtensions.GetTypeByFullName(componentTypeName);
+
+      void IPortableArchetype.Unload() {
+        throw new NotImplementedException();
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
@@ -40,6 +41,7 @@ namespace Overworld.Data {
       public override HashSet<string> ValidConfigOptionKeys
         => base.ValidConfigOptionKeys
           .Append(PixelsPerTileConfigKey)
+          .Append(DescriptionConfigKey)
           .Append(ImportModeConfigKey)
           .Append(SheetSizeInTilesConfigKey)
           .Append(TagsConfigOptionKey) 
@@ -87,7 +89,7 @@ namespace Overworld.Data {
       /// Key for the tile diameter in pixels value in the config
       /// </summary>
       public const string PixelsPerTileConfigKey 
-        = "diameter";
+        = "pixelsPerTileDiameter";
 
       /// <summary>
       /// Key for the tile height
@@ -118,7 +120,7 @@ namespace Overworld.Data {
       /// TODO: these should be singletons probably.
       /// </summary>
       public Porter(User currentUser) 
-        : base(currentUser) {}
+        : base(() => currentUser.UniqueName) {}
 
       /// <summary>
       /// Imports the archetyps, assuming the one file is an image or config.json
@@ -321,7 +323,7 @@ namespace Overworld.Data {
       /// <summary>
       /// Saves each tile as it's own image with a config for import
       /// </summary>
-      protected override string[] _serializeArchetypeToModFiles(Data.Tile.Type archetype, string packageDirectoryPath) {
+      protected override string[] SerializeArchetypeToModFiles(Data.Tile.Type archetype, string packageDirectoryPath) {
         List<string> createdFiles = new();
 
         // some types are saved along with other types so we ignore them.
@@ -335,7 +337,7 @@ namespace Overworld.Data {
           // pixels to png
           string imageFileName;
           if (imageData is not null) {
-            imageFileName = Path.Combine(packageDirectoryPath, "_texture.png");
+            imageFileName = Path.Combine(packageDirectoryPath, "texture.png");
             File.WriteAllBytes(imageFileName, imageData); 
             createdFiles.Add(imageFileName);
           }
@@ -344,7 +346,7 @@ namespace Overworld.Data {
           string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
           JObject config = archetype.GenerateConfig();
           if (imageData is not null) {
-            config.Add("imageFile", "./_texture.png");
+            config.Add("imageFile", "./texture.png");
           }
 
           // write the config

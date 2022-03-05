@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,6 +120,10 @@ namespace Overworld.Data {
 
         IEntityDisplayableSprite IEntityDisplayableSprite.IArchetype.Make()
           => Make();
+
+        void IPortableArchetype.Unload() {
+          throw new System.NotImplementedException();
+        }
       }
     }
   }

@@ -1,4 +1,5 @@
 ﻿using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -129,6 +130,10 @@ namespace Overworld.Data {
         throw new System.NotImplementedException();
       }
 
+      void IPortableArchetype.Unload() {
+        throw new System.NotImplementedException();
+      }
+
       /// <summary>
       /// Import a type from a config and data
       /// </summary>
@@ -177,7 +182,7 @@ namespace Overworld.Data {
         /// <summary>
         /// Import constructor
         /// </summary>
-        internal Type(string resourceKey, JObject config, AnimationClip clip, IEnumerable<Tag> tags = null)
+        internal Type(string resourceKey, JObject config, AnimationClip clip, IEnumerable<BuiltInTag> tags = null)
           : base(resourceKey, config, clip, tags) {
           ShouldScaleToFitEntityByDefault = config["scaleToFitEntity"].Value<bool>();
         }

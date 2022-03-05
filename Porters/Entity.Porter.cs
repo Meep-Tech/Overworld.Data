@@ -1,5 +1,6 @@
 ﻿using Meep.Tech.Collections.Generic;
 using Meep.Tech.Data;
+using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
 using Overworld.Data.Entities.Components;
 using Overworld.Data.IO;
@@ -88,7 +89,7 @@ namespace Overworld.Data {
 
       ///<summary><inheritdoc/></summary>
       public Porter(User currentUser)
-        : base(currentUser) { }
+        : base(() => currentUser.UniqueName) { }
 
       ///<summary><inheritdoc/></summary>
       public override HashSet<string> ValidConfigOptionKeys
@@ -294,7 +295,7 @@ namespace Overworld.Data {
       }
 
       ///<summary><inheritdoc/></summary>
-      protected override string[] _serializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
+      protected override string[] SerializeArchetypeToModFiles(Type archetype, string packageDirectoryPath) {
         List<string> createdFiles = new();
 
         // Save the config file:

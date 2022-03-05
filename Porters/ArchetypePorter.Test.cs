@@ -1,12 +1,18 @@
-﻿using System.IO;
+﻿using Meep.Tech.Data;
+using Meep.Tech.Data.Configuration;
+using System;
+using System.IO;
 
-namespace Overworld.Data.IO {
+/*namespace Overworld.Data.IO {
 
   public abstract partial class ArchetypePorter<TArchetype> where TArchetype : Meep.Tech.Data.Archetype, IPortableArchetype {
+
     /// <summary>
-    /// A test of a porter and it's abilities
+    /// A test of a porter and it's abilities.
+    /// These tests create and then destroy a default universe, multi-threading tests is not currently supported.
     /// </summary>
     public class Test {
+      Universe _testUniverse;
 
       /// <summary>
       /// The porter to use in testing.
@@ -26,7 +32,7 @@ namespace Overworld.Data.IO {
       /// <summary>
       /// Make a new import tester.
       /// </summary>
-      public Test(ArchetypePorter<TArchetype> porter) {
+      public Test(ArchetypePorter<TArchetype> porter, Action<Loader.Settings> xbamLoaderSettingsConfiguation = null) {
         Porter = porter;
       }
 
@@ -36,6 +42,24 @@ namespace Overworld.Data.IO {
       public void Run() {
 
       }
+
+      protected virtual void _initXBam() {
+        // Configure Settings
+        Loader.Settings settings = new() {
+          FatalOnCannotInitializeType = true
+        };
+
+        /// Load Archetypes
+        Loader loader = new(settings);
+        loader.Initialize(
+          _testUniverse = new Universe(loader, "Overworld")
+        );
+      }
+
+      protected virtual void _destroyXbam() {
+
+      }
     }
   }
 }
+*/
