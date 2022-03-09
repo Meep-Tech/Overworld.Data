@@ -130,7 +130,7 @@ namespace Overworld.Data {
         }
 
         // check if this is built using a base.
-        if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, out JToken foundArchetypeName)) {
+        if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, StringComparison.OrdinalIgnoreCase, out JToken foundArchetypeName)) {
           if (Entity.Types.TryToGet(foundArchetypeName.Value<string>(), out Type foundBaseArchetype)) {
             options.Add(EntityBaseArchetypeConfigOptionKey, foundBaseArchetype);
           } else throw new ArgumentException($"Cannot find an Archetype of type Entity.Type with key: {foundArchetypeName}.");

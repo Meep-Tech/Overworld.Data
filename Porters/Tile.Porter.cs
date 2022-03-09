@@ -108,15 +108,12 @@ namespace Overworld.Data {
         (string resourceName, string packageName, string resourceKey)
           = ConstructArchetypeKeys(imageFile ?? assetFiles.First(), options, config);
         
-        int? diameter = config.TryGetValue(PorterExtensions.PixelsPerTileConfigKey, out JToken value)
-           ? value.Value<int>()
-           : null;
+        int? diameter = config.TryGetValue<int?>(PorterExtensions.PixelsPerTileConfigKey);
 
-        Vector2? dimensionsInTiles = config.TryGetValue(SheetSizeInTilesConfigKey, out JToken sizeInTiles)
-          ? sizeInTiles.Value<Vector2>()
-          : options.TryGetValue(ProvidedSheetDimensionsOption, out object foundDimensions)
+        Vector2? dimensionsInTiles = config.TryGetValue<Vector2?>(SheetSizeInTilesConfigKey)
+          ?? (options.TryGetValue(ProvidedSheetDimensionsOption, out object foundDimensions)
             ? foundDimensions as Vector2?
-            : null;
+            : null);
 
         if (!diameter.HasValue) {
           if (dimensionsInTiles.HasValue) {
@@ -130,7 +127,7 @@ namespace Overworld.Data {
           = _importUnityTilesFrom(
             imageFile,
             diameter,
-            config.TryGetValue(ImportModeConfigKey, out JToken enumValue)
+            config.TryGetValue(ImportModeConfigKey, StringComparison.OrdinalIgnoreCase, out JToken enumValue)
               && enumValue.Value<BackgroundImageImportMode>() == BackgroundImageImportMode.Individual,
             dimensionsInTiles
           );
@@ -140,7 +137,7 @@ namespace Overworld.Data {
           index = 0;
         }
 
-        bool hasHeight = config.ContainsKey(TileHeightConfigKey);
+        bool hasHeight = config.HasProperty(TileHeightConfigKey);
         bool hasSpecialValues = hasHeight;
         // One for the bg
         Dictionary<string, Type> @return = all.ToDictionary(tile => tile.Key.ToString() + (hasSpecialValues ? " (BG)" : ""), tile => {

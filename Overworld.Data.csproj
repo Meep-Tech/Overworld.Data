@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFrameworks>netstandard2.1;net5;net6</TargetFrameworks>
+	  <LangVersion>9.0</LangVersion>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ECSBAMF\Meep.Tech.Data.IO\Meep.Tech.Data.IO.csproj" />
+    <ProjectReference Include="..\..\..\ECSBAMF\Meep.Tech.Data\Meep.Tech.Data.csproj" />
+    <ProjectReference Include="..\..\..\Simple.Ux\Simple.Ux.Data\Simple.Ux.Data.csproj" />
+    <ProjectReference Include="..\..\..\Simple.Ux\Simple.Ux.XBam.Components\Simple.Ux.XBam.Components.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEditor">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEditor.CoreModule">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEditor.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEngine.AnimationModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TilemapModule">
+      <HintPath>..\..\_shared\_unity\_external\2021.2.7f1\UnityEngine.TilemapModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+	<Import Project="post-build-copy.csproj" Condition="Exists('post-build-copy.csproj')" />
+
+</Project>
