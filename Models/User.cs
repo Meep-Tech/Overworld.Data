@@ -8,5 +8,9 @@
       get;
       internal set;
     }
+
+    public User(string uniqueName) {
+      UniqueName = uniqueName;
+    }
   }
 }

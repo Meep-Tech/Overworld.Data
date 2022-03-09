@@ -23,28 +23,14 @@ namespace Overworld.Data.Entities.Components {
       = new();
 
     /// <summary>
-    /// Tag used to put single frame icon-based results first in searches over animated results.
-    /// </summary>
-    public static Tag IconPreferenceSearchTag {
-      get;
-    } = new Tag("Icon");
-
-    /// <summary>
-    /// Tag used to identify the default icons and animations used by this entity.
-    /// </summary>
-    public static Tag DefaultDisplayEntryTag {
-      get;
-    } = new Tag("Default");
-
-    /// <summary>
     /// The default icon used for this entity.
     /// </summary>
     public Entity.Icon DefaultIcon {
       get => _defaultIcon;
       internal set {
-        _icons.Value.RemoveTagsForItem(_defaultIcon, DefaultDisplayEntryTag);
-        _allSpriteOptions.Value.RemoveTagsForItem(_defaultIcon, DefaultDisplayEntryTag);
-        Add(value, DefaultDisplayEntryTag.AsSingleItemEnumerable());
+        _icons.Value.RemoveTagsForItem(_defaultIcon, SpriteDisplayOptions.DefaultDisplayEntryTag);
+        _allSpriteOptions.Value.RemoveTagsForItem(_defaultIcon, SpriteDisplayOptions.DefaultDisplayEntryTag);
+        Add(value, SpriteDisplayOptions.DefaultDisplayEntryTag.AsSingleItemEnumerable());
         _defaultIcon = value;
       }
     }
@@ -83,7 +69,7 @@ namespace Overworld.Data.Entities.Components {
       foreach(var entry in options.AllDisplayOptionTypes) {
         Add(entry.Value.Make(), entry.Key);
       }
-    }
+    } SpriteManager() { }
 
     /// <summary>
     /// Add a new displayable item (like an icon or animation) to this psrite manager.
@@ -92,7 +78,7 @@ namespace Overworld.Data.Entities.Components {
       if (displayableSpriteAnimationOrIcon is Entity.Icon icon) {
         _icons.Value.Add(tags, icon);
         tags = tags
-          .Append(IconPreferenceSearchTag)
+          .Append(SpriteDisplayOptions.IconPreferenceSearchTag)
           .Append(Entity.Animation.BuiltInTag.Still);
       } else if (displayableSpriteAnimationOrIcon is Animation animation) {
         _animations.Value.Add(tags, animation);

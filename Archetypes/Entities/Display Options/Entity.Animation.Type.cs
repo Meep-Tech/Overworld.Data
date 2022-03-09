@@ -130,16 +130,8 @@ namespace Overworld.Data {
         throw new System.NotImplementedException();
       }
 
-      void IPortableArchetype.Unload() {
-        throw new System.NotImplementedException();
-      }
-
-      /// <summary>
-      /// Import a type from a config and data
-      /// </summary>
-      /*public static Type Import(JObject config, AnimationClip clip, IEnumerable<Tag> tags = null)
-        => new Type(config, clip, tags);
-      */
+      void IPortableArchetype.Unload()
+        => TryToUnload();
     }
   }
 

@@ -1,6 +1,7 @@
 ﻿using Meep.Tech.Data;
 using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
+using Overworld.Data.IO;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,6 +13,7 @@ namespace Overworld.Data {
       /// <summary>
       /// A type of entity icon.
       /// </summary>
+      [Meep.Tech.Data.Configuration.Loader.Settings.DoNotBuildInInitialLoad]
       public class Type :
         Archetype<Icon, Icon.Type>,
         IEntityDisplayableSprite.IArchetype,
@@ -73,8 +75,9 @@ namespace Overworld.Data {
         protected Type(
           string name,
           string resourceKey,
-          string packageKey
-        ) : base(new Identity(name, packageKey)) {
+          string packageKey,
+          Universe universe = null
+        ) : base(new Identity(name, packageKey), universe) {
           ResourceKey = resourceKey;
           PackageKey = packageKey;
         }
@@ -84,11 +87,12 @@ namespace Overworld.Data {
         /// </summary>
         protected internal Type(
           string name,
-          string resourceKey,
           string packageKey,
+          string resourceKey,
           JObject config,
-          Dictionary<string, object> importOptionsAndObjects
-        ) : this(name, resourceKey, packageKey) {
+          Dictionary<string, object> importOptionsAndObjects,
+          Universe universe
+        ) : this(name, resourceKey, packageKey, universe) {
           Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
           _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
           Sprite = importOptionsAndObjects.TryGetValue(nameof(Sprite), out var found)
@@ -110,7 +114,7 @@ namespace Overworld.Data {
 
           // config image data
           if (Sprite?.texture != null) {
-            config.Add(Porter.PixelsPerTileConfigKey, JToken.FromObject(Sprite.pixelsPerUnit));
+            config.Add(PorterExtensions.PixelsPerTileConfigKey, JToken.FromObject(Sprite.pixelsPerUnit));
           }
             
           config.Add(Porter.TagsConfigOptionKey, JToken.FromObject(DefaultTags));
@@ -121,9 +125,8 @@ namespace Overworld.Data {
         IEntityDisplayableSprite IEntityDisplayableSprite.IArchetype.Make()
           => Make();
 
-        void IPortableArchetype.Unload() {
-          throw new System.NotImplementedException();
-        }
+        void IPortableArchetype.Unload()
+          => TryToUnload();
       }
     }
   }

@@ -33,14 +33,14 @@ namespace Overworld.Data {
       /// <summary>
       /// The package name that this came from.
       /// </summary>
-      public override string DefaultPackageName {
+      public override string SubFolderName {
         get;
       } = "_tiles";
 
       ///<summary><inheritdoc/></summary>
       public override HashSet<string> ValidConfigOptionKeys
         => base.ValidConfigOptionKeys
-          .Append(PixelsPerTileConfigKey)
+          .Append(PorterExtensions.PixelsPerTileConfigKey)
           .Append(DescriptionConfigKey)
           .Append(ImportModeConfigKey)
           .Append(SheetSizeInTilesConfigKey)
@@ -51,24 +51,9 @@ namespace Overworld.Data {
       ///<summary><inheritdoc/></summary>
       public override HashSet<string> ValidImportOptionKeys 
         => base.ValidImportOptionKeys
-          .Append(PixelsPerTileOption)
+          .Append(PorterExtensions.PixelsPerTileImportOptionKey)
           .Append(ProvidedSheetDimensionsOption)
           .Append(InPlaceTileCallbackOption);
-
-      /// <summary>
-      /// Valid image extensions
-      /// </summary>
-      public readonly static HashSet<string> ValidImageExtensions
-        = new() {
-          {".png"}
-        };
-
-      /// <summary>
-      /// option for pixels per tile.
-      /// Takes an int.
-      /// </summary>
-      public const string PixelsPerTileOption
-        = "PixelsPerTile";
 
       /// <summary>
       /// option for dimensions in tiles instead of pixels during import.
@@ -84,12 +69,6 @@ namespace Overworld.Data {
       /// </summary>
       public const string InPlaceTileCallbackOption
         = "TileLocationCallback";
-
-      /// <summary>
-      /// Key for the tile diameter in pixels value in the config
-      /// </summary>
-      public const string PixelsPerTileConfigKey 
-        = "pixelsPerTileDiameter";
 
       /// <summary>
       /// Key for the tile height
@@ -120,133 +99,18 @@ namespace Overworld.Data {
       /// TODO: these should be singletons probably.
       /// </summary>
       public Porter(User currentUser) 
-        : base(() => currentUser.UniqueName) {}
+        : base(() => currentUser.UniqueName) { }
 
-      /// <summary>
-      /// Imports the archetyps, assuming the one file is an image or config.json
-      /// TODO: implement just config.json upload
-      /// TODO: this should return two archetypes, the background and special.
-      /// 
-      /// </summary>
-      /// <param name="options">
-      /// - PixelsPerTileOption: the pixel diameter of imported tiles.
-      /// - (optional) InPlaceTileCallbackOption: Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
-      /// </param>
-      protected override IEnumerable<Type> _importArchetypesFromExternalFile(
-        string externalFileLocation,
-        string resourceKey,
-        string name,
-        string packageKey = null,
-        Dictionary<string, object> options = null
-      ) {
-        // if we got no image file, but got a config json:
-        if(externalFileLocation.ToLower().EndsWith(".json")) {
-          JObject config = TryToGetConfig(externalFileLocation.AsSingleItemEnumerable(), out _);
+      ///<summary><inheritdoc/></summary>
+      protected override IEnumerable<Type> BuildLooselyFromConfig(JObject config, IEnumerable<string> assetFiles, Dictionary<string, object> options, out IEnumerable<string> processedFiles) {
+        string imageFile = this.GetDefaultImageFromAssets(assetFiles, options, config);
 
-          resourceKey = CorrectBaseKeysAndNamesForConfigValues(
-            externalFileLocation,
-            ref name,
-            ref packageKey,
-            config
-          );
-
-          return new[]{new Tile.Type(
-            name,
-            packageKey,
-            resourceKey,
-            config,
-            options ?? new()
-          )};
-
-        } // if it's just an image file:
-        else if(ValidImageExtensions.Contains(Path.GetExtension(externalFileLocation).ToLower())) {
-          (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
-            = _importUnityTilesFrom(
-              externalFileLocation,
-              (int)options[PixelsPerTileOption],
-              false,
-              options.TryGetValue(ProvidedSheetDimensionsOption, out object foundDimensions)
-                ? foundDimensions as Vector2Int?
-                : null
-            );
-
-          int? index = null;
-          if(all.Count > 0) {
-            index = 0;
-          }
-
-          Dictionary<Hash128, Tile.Type> types
-          = new();
-
-          all.ForEach(tile => {
-            string currentName = $"{name}{(index is not null ? $"-{++index}" : "")}";
-            string currentKey = $"{resourceKey}{(index is not null ? $"-{index}" : "")}";
-            Dictionary<string, object> localOptions = new(options ?? new());
-            localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
-            localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
-            types.Add(
-              tile.Key,
-              new Tile.Type(
-                currentName,
-                currentKey,
-                packageKey,
-                new JObject(),
-                localOptions
-              ) {
-                LinkArchetypeToTileDataOnSet = false
-              }
-            );
-          });
-
-          if(options.ContainsKey(InPlaceTileCallbackOption)) {
-            locations.ForEach(e =>
-              ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
-                e.Key,
-                types[e.Value]
-              )
-            );
-          }
-
-          return types.Values;
-        } else throw new ArgumentException($"Invalid file type for tile upload: {Path.GetExtension(externalFileLocation)}");
-      }
-
-      /// <summary>
-      /// Imports the archetyps, assuming at least one of the tiles is an image and one may be an config.json
-      /// </summary>
-      /// <param name="options">
-      /// - PixelsPerTileOption: the pixel diameter of imported tiles.
-      /// - ProvidedSheetDimensionsOption (optional): if the image is a sprite sheet, you can provide a custom number of tiles to pull from it
-      /// - InPlaceTileCallbackOption (optional): Action[Vector2Int&#44; Tile.Type] executed on the imported tile, given it's location in it's image.
-      /// </param>
-      /// <returns></returns>
-      protected override IEnumerable<Type> _importArchetypesFromExternalFiles(
-        string[] externalFileLocations,
-        string resourceKey,
-        string name,
-        string packageKey = null,
-        Dictionary<string, object> options = null
-      ) {
-        JObject config = TryToGetConfig(externalFileLocations, out _);
-
-        if(!config.HasValues) {
-          throw new NotSupportedException($"Multi-File imports for Tiles must have a config. Animations may be implimented this way in the future.");
-        }
-
-        string tileMap = externalFileLocations.OrderBy(fileName => fileName)
-          .First(fileName => ValidImageExtensions.Contains(Path.GetExtension(fileName).ToLower()));
-
-        if(tileMap is null) {
-          throw new System.ArgumentException($"Could not find a valid image file for Tile type creation in directory: {Path.GetDirectoryName((externalFileLocations.First()))}.\n Full path: {externalFileLocations.First()}");
-        }
-
-        if(config.HasValues) {
-          CorrectBaseKeysAndNamesForConfigValues(tileMap, ref packageKey, ref name, config);
-        }
-
-        int? diameter = config.TryGetValue(PixelsPerTileConfigKey, out JToken value)
-          ? value.Value<int>()
-          : null;
+        (string resourceName, string packageName, string resourceKey)
+          = ConstructArchetypeKeys(imageFile ?? assetFiles.First(), options, config);
+        
+        int? diameter = config.TryGetValue(PorterExtensions.PixelsPerTileConfigKey, out JToken value)
+           ? value.Value<int>()
+           : null;
 
         Vector2? dimensionsInTiles = config.TryGetValue(SheetSizeInTilesConfigKey, out JToken sizeInTiles)
           ? sizeInTiles.Value<Vector2>()
@@ -254,69 +118,148 @@ namespace Overworld.Data {
             ? foundDimensions as Vector2?
             : null;
 
-        if(!diameter.HasValue) {
-          if(dimensionsInTiles.HasValue) {
+        if (!diameter.HasValue) {
+          if (dimensionsInTiles.HasValue) {
             diameter = null;
-          } else
-            diameter = (int)options[PixelsPerTileOption];
+          }
+          else
+            diameter = (int)options[PorterExtensions.PixelsPerTileImportOptionKey];
         }
 
         (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
           = _importUnityTilesFrom(
-            tileMap,
+            imageFile,
             diameter,
             config.TryGetValue(ImportModeConfigKey, out JToken enumValue)
               && enumValue.Value<BackgroundImageImportMode>() == BackgroundImageImportMode.Individual,
             dimensionsInTiles
           );
 
+        int? index = null;
+        if (all.Count > 1) {
+          index = 0;
+        }
+
         bool hasHeight = config.ContainsKey(TileHeightConfigKey);
         bool hasSpecialValues = hasHeight;
         // One for the bg
-        Dictionary<string, Type> @return = all.ToDictionary(tile => tile.Value.name + (hasSpecialValues ? " (BG)" : ""), tile => {
+        Dictionary<string, Type> @return = all.ToDictionary(tile => tile.Key.ToString() + (hasSpecialValues ? " (BG)" : ""), tile => {
           Dictionary<string, object> localOptions = new(options ?? new());
           localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
           localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
-          return new Tile.Type(
-              name + (hasSpecialValues ? " (BG)" : ""),
-              resourceKey,
-              packageKey,
-              config,
-              localOptions
-            ) {
-              LinkArchetypeToTileDataOnSet = false,
-              _ignoreDuringModReSerialization = hasSpecialValues
-           };
-          }
-        );
+          localOptions.Add(nameof(Type.LinkArchetypeToTileDataOnSet), false);
+          localOptions.Add(nameof(Type._ignoreDuringModReSerialization), false);
+          return BuildArchetypeFromCompiledData(
+            resourceName + (hasSpecialValues ? " (BG)" : "") + (index is not null ? $" - {++index}" : ""),
+            packageName,
+            resourceKey + (index is not null ? $" - {index}" : ""),
+            config,
+            localOptions,
+            Universe
+          ).First();
+        });
+
+        if (all.Count > 1) {
+          index = 0;
+        }
 
         /// configs with special values and a background make more than one archetype.
         // and one with the BG and other linked values.
         if (hasSpecialValues) {
-          @return.Merge(all.ToDictionary(tile => tile.Value.name, tile => {
+          @return.Merge(all.ToDictionary(tile => tile.Key.ToString(), tile => {
             Dictionary<string, object> localOptions = new(options ?? new());
             localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
             localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
-            return new Tile.Type(
-              name,
-              resourceKey,
-              packageKey,
+            localOptions.Add(nameof(Type.LinkArchetypeToTileDataOnSet), true);
+            return BuildArchetypeFromCompiledData(
+              resourceName + (index is not null ? $" - {++index}" : ""),
+              packageName,
+              resourceKey + (index is not null ? $" - {index}" : ""),
               config,
-              localOptions
-            );
+              localOptions,
+              Universe
+            ).First();
           }));
         }
 
-
-        if(options.ContainsKey(InPlaceTileCallbackOption)) {
+        if (options.ContainsKey(InPlaceTileCallbackOption)) {
           locations.ForEach(e =>
             ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
               e.Key,
-              @return[all[e.Value].name]
+              @return[e.Value.ToString()]
             )
           );
         }
 
+        processedFiles = new[] {
+          imageFile,
+          assetFiles.First()
+        }.ToHashSet();
+        return @return.Values;
+      }
+
+      ///<summary><inheritdoc/></summary>
+      protected override IEnumerable<Type> BuildLooselyFromAssets(IEnumerable<string> assetFiles, Dictionary<string, object> options, out IEnumerable<string> processedFiles) {
+        string imageFile = this.GetDefaultImageFromAssets(assetFiles, options)
+          ?? throw new ArgumentException($"No default image file found. Tiles with no config require a valid default image");
+
+        (string resourceName, string packageName, string resourceKey)
+          = ConstructArchetypeKeys(imageFile, options, null);
+
+        Vector2? dimensionsInTiles = options.TryGetValue(ProvidedSheetDimensionsOption, out object foundDimensions)
+          ? foundDimensions as Vector2?
+          : null;
+
+        int? diameter;
+        if (dimensionsInTiles.HasValue) {
+            diameter = null;
+        }
+        else
+          diameter = (int)options[PorterExtensions.PixelsPerTileImportOptionKey];
+
+        (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
+          = _importUnityTilesFrom(
+            imageFile,
+            diameter,
+            false,
+            dimensionsInTiles
+          );
+
+        int? index = null;
+        if (all.Count > 1) {
+          index = 0;
+        }
+
+        /// build all the tiles
+        var emptyConfig = new JObject();
+        Dictionary<Hash128, Type> @return = all.ToDictionary(tile => tile.Key, tile => {
+          Dictionary<string, object> localOptions = new(options ?? new());
+          localOptions.Add(nameof(Type.DefaultBackground), tile.Value);
+          localOptions.Add(nameof(Type.BackgroundImageHashKey), tile.Key);
+          localOptions.Add(nameof(Type.LinkArchetypeToTileDataOnSet), false);
+          return BuildArchetypeFromCompiledData(
+            resourceName + (index is not null ? $" - {++index}" : ""),
+            packageName,
+            resourceKey + (index is not null ? $" - {index}" : ""),
+            emptyConfig,
+            localOptions,
+            Universe
+          ).First();
+        });
+
+        if (options.ContainsKey(InPlaceTileCallbackOption)) {
+          locations.ForEach(e =>
+            ((Action<Vector2Int, Tile.Type>)options[InPlaceTileCallbackOption]).Invoke(
+              e.Key,
+              @return[e.Value]
+            )
+          );
+        }
+
+        processedFiles = new[] {
+          imageFile,
+          assetFiles.First()
+        }.ToHashSet();
         return @return.Values;
       }
 
@@ -343,7 +286,7 @@ namespace Overworld.Data {
           }
 
           /// config
-          string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
+          string configFileName = Path.Combine(packageDirectoryPath, DefaultConfigFileName);
           JObject config = archetype.GenerateConfig();
           if (imageData is not null) {
             config.Add("imageFile", "./texture.png");
@@ -364,9 +307,12 @@ namespace Overworld.Data {
         Dictionary<Vector2Int, Hash128> locations
       ) _importUnityTilesFrom(string imageLocation, int? tileWidthInPixels, bool isIndividual, Vector2? providedTileDimensions) {
         Texture2D spriteSheet = new(2, 2);
-        Dictionary<Hash128, UnityEngine.Tilemaps.Tile> tileTypes
-          = new();
-        spriteSheet.LoadImage(File.ReadAllBytes(imageLocation));
+
+        var imageFile = new System.IO.FileInfo(imageLocation);
+        if (imageFile.Exists) {
+          byte[] imageBytes = File.ReadAllBytes(imageFile.FullName);
+          spriteSheet.LoadImage(imageBytes);
+        } else throw new ArgumentException($"Could not find file:{imageLocation}");
 
         if(!tileWidthInPixels.HasValue) {
           if(!providedTileDimensions.HasValue) {
@@ -446,7 +392,7 @@ namespace Overworld.Data {
             if(@return.all.TryGetValue(tileHash, out _)) {
               ScriptableObject.Destroy(tile);
               //tile = foundLocal;
-            } else if(tileTypes.TryGetValue(tileHash, out _)) {
+            } else if(@return.all.TryGetValue(tileHash, out _)) {
               ScriptableObject.Destroy(tile);
               //tile = existing;
             } else 

@@ -100,9 +100,10 @@ namespace Overworld.Data {
       /// </summary>
       protected Type(
         string name,
+        string packageKey,
         string resourceKey,
-        string packageKey
-      ) : base(new Identity(name, packageKey)) {
+        Universe universe = null
+      ) : base(new Identity(name, packageKey), universe) {
          ResourceKey = resourceKey;
         _packageKey = packageKey;
       }
@@ -114,11 +115,12 @@ namespace Overworld.Data {
       /// </summary>
       protected internal Type(
         string name,
-        string resourceKey,
         string packageKey,
+        string resourceKey,
         JObject config,
-        Dictionary<string, object> importOptionsAndObjects
-      ) : this(name, resourceKey, packageKey) {
+        Dictionary<string, object> importOptionsAndObjects,
+        Universe universe
+      ) : this(name, resourceKey, packageKey, universe) {
         /// tags
         _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
 
@@ -234,7 +236,7 @@ namespace Overworld.Data {
         // default sprite icon:
         SpriteDisplayOptions spriteData = GetComponent<SpriteDisplayOptions>();
         if (spriteData.DefaultIconType is not null) {
-          config.Add(Porter.DefaultSpriteConfigOptionKey, spriteData.DefaultIconType.Id.Key);
+          config.Add(Porter.DefaultSpriteIconConfigOptionKey, spriteData.DefaultIconType.Id.Key);
         }
 
         HashSet<IEntityDisplayableSprite.IArchetype> serializedDisplayTypes
@@ -380,9 +382,8 @@ namespace Overworld.Data {
           : _entityComponentDefaultBuilderCache[componentTypeName] =
             TypeExtensions.GetTypeByFullName(componentTypeName);
 
-      void IPortableArchetype.Unload() {
-        throw new NotImplementedException();
-      }
+      void IPortableArchetype.Unload()
+        => TryToUnload();
     }
   }
 }

@@ -23,13 +23,13 @@ namespace Overworld.Data {
 
       ///<summary><inheritdoc/></summary>
       protected override Dictionary<string, Func<IBuilder, IModel.IComponent>> DefaultModelComponentCtors 
-        => _DefaultModelComponentCtors ??= base.DefaultModelComponentCtors.Append(Components<BasicPhysicalStats>.Key, builder => Components<BasicPhysicalStats>.BuilderFactory.Make(
+        => _DefaultModelComponentCtors ??= base.DefaultModelComponentCtors.AppendOrReplace(Components<BasicPhysicalStats>.Key, builder => Components<BasicPhysicalStats>.BuilderFactory.Make(
           (nameof(BasicPhysicalStats.Height), 2),
           (nameof(BasicPhysicalStats.Weight), 120)
         ));
 
       Type() 
-        : base("Character", "Character", "_base") {}
+        : base("Character", "_base.Entities.", "_base.Entities::Character") {}
 
       /// <summary>
       /// Make a new character with just a name.

@@ -1,6 +1,6 @@
-﻿namespace Overworld.Data.IO {
+﻿/*namespace Overworld.Data.IO {
   public partial class Entity {
-    public partial class Animation {
+    public partial class Animation {*/
       /// <summary>
       /// For in-porting and ex-porting and cross-porting entity animations.
       /// Animation metadata is stored in data/entities/animations
@@ -296,6 +296,6 @@
             .Trim();
         }
       }*/
-    }
+/*    }
   }
-}
+}*/

@@ -1,6 +1,7 @@
 ﻿using Meep.Tech.Data;
 using Meep.Tech.Data.IO;
 using Newtonsoft.Json.Linq;
+using Overworld.Data.IO;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -115,9 +116,10 @@ namespace Overworld.Data {
       /// </summary>
       protected Type(
         string name,
+        string packageKey,
         string resourceKey,
-        string packageKey
-      ) : base(new Identity(name, packageKey)) {
+        Universe universe = null
+      ) : base(new Identity(name, packageKey), universe) {
         ResourceKey = resourceKey;
         PackageKey = packageKey;
       }
@@ -125,18 +127,22 @@ namespace Overworld.Data {
       /// <summary>
       /// Used to make new tiles via import.
       /// </summary>
-      protected internal Type(
+      protected Type(
         string name,
-        string resourceKey,
         string packageKey,
+        string resourceKey,
         JObject config,
-        Dictionary<string, object> importOptionsAndObjects
-      ) : this(name, resourceKey, packageKey) {
+        Dictionary<string, object> importOptionsAndObjects,
+        Universe universe = null
+      ) : this(name, packageKey, resourceKey, universe) {
+        LinkArchetypeToTileDataOnSet = config.TryGetValue<bool>(nameof(LinkArchetypeToTileDataOnSet));
+        _ignoreDuringModReSerialization = config.TryGetValue<bool>(nameof(_ignoreDuringModReSerialization));
+        Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
         _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
         Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
         UseDefaultBackgroundAsInWorldTileImage = importOptionsAndObjects.TryGetValue(nameof(UseDefaultBackgroundAsInWorldTileImage), out object useBgAsInWorld)
-            ? (bool)useBgAsInWorld
-            : config.TryGetValue(Porter.UseDefaultBackgroundAsInWorldTileImageConfigKey, @default: true);
+          ? (bool)useBgAsInWorld
+          : config.TryGetValue(Porter.UseDefaultBackgroundAsInWorldTileImageConfigKey, @default: true);
         DefaultBackground = importOptionsAndObjects.TryGetValue(nameof(DefaultBackground), out object backgroundImage)
           ? backgroundImage as UnityEngine.Tilemaps.Tile
           : null;
@@ -179,7 +185,7 @@ namespace Overworld.Data {
 
         // config image data
         if (DefaultBackground?.sprite.texture != null) {
-          config.Add(Porter.PixelsPerTileConfigKey, JToken.FromObject(DefaultBackground.sprite.pixelsPerUnit));
+          config.Add(PorterExtensions.PixelsPerTileConfigKey, JToken.FromObject(DefaultBackground.sprite.pixelsPerUnit));
           config.Add(Porter.ImportModeConfigKey, JToken.FromObject(Porter.BackgroundImageImportMode.Individual));
         }
 
@@ -188,9 +194,8 @@ namespace Overworld.Data {
         return config;
       }
 
-      void IPortableArchetype.Unload() {
-        throw new System.NotImplementedException();
-      }
+      void IPortableArchetype.Unload()
+        => TryToUnload();
     }
   }
 

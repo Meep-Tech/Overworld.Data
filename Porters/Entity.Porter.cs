@@ -16,14 +16,6 @@ namespace Overworld.Data {
     /// ised to inport and expoert entities to and from mod folders
     /// </summary>
     public class Porter : ArchetypePorter<Entity.Type> {
-      
-      /// <summary>
-      /// Valid image extensions
-      /// </summary>
-      public readonly static HashSet<string> ValidDefaultImageExtensions
-        = new() {
-          {".png"}
-        };
 
       /// <summary>
       /// Key for intial model components added to an entity from a config.
@@ -47,7 +39,7 @@ namespace Overworld.Data {
       /// <summary>
       /// The default sprite for an entity
       /// </summary>
-      public const string DefaultSpriteConfigOptionKey
+      public const string DefaultSpriteIconConfigOptionKey
         = "defaultSpriteImageFile";
 
       /// <summary>
@@ -84,7 +76,7 @@ namespace Overworld.Data {
         = "AddBasicPhysics";
 
       ///<summary><inheritdoc/></summary>
-      public override string DefaultPackageName
+      public override string SubFolderName
         => "_entities";
 
       ///<summary><inheritdoc/></summary>
@@ -95,7 +87,7 @@ namespace Overworld.Data {
       public override HashSet<string> ValidConfigOptionKeys
         => base.ValidConfigOptionKeys
           .Append(EntityBaseArchetypeConfigOptionKey)
-          .Append(DefaultSpriteConfigOptionKey)
+          .Append(DefaultSpriteIconConfigOptionKey)
           .Append(SpriteAnimationsConfigOptionKey)
           .Append(SpriteIconsConfigOptionKey)
           .Append(ExtraSpriteDisplayOptionsConfigOptionKey)
@@ -108,190 +100,102 @@ namespace Overworld.Data {
           .Append(SpawnLocationImportOptionKey)
           .Append(AddBasicPhysicsImportOptionKey);
 
-      /// <summary>
-      /// If it's a single file and it's a config, it's added as an invisible entity(ghost icon)
-      /// If it's a single file and it's an image file, it's added as a new entity with basic physics.
-      /// </summary>
-      /// <param name="options"></param>
-      protected override IEnumerable<Type> _importArchetypesFromExternalFile(
-        string externalFileLocation,
-        string resourceKey,
-        string name,
-        string packageKey = null,
-        Dictionary<string, object> options = null
+      ///<summary><inheritdoc/></summary>
+      protected override IEnumerable<Type> BuildLooselyFromConfig(
+        JObject config,
+        IEnumerable<string> assetFiles,
+        Dictionary<string, object> options,
+        out IEnumerable<string> processedFiles
       ) {
-        Type @return = null;
-        string extension;
-        /// import just from a config json file
-        if ((extension = Path.GetExtension(externalFileLocation).ToLower()) == ".json") {
-          JObject config = TryToGetConfig(externalFileLocation.AsSingleItemEnumerable(), out _);
+        List<string> allProcessedFiles = new();
 
-          resourceKey = CorrectBaseKeysAndNamesForConfigValues(
-            externalFileLocation,
-            ref name,
-            ref packageKey,
-            config
-          );
+        /// Try to get the default icon from the config.
+        string defaultIconFileLocatorString
+          = config.TryGetValue<string>(DefaultSpriteIconConfigOptionKey) ??
+            assetFiles.FirstOrDefault(f => PorterExtensions.ValidImageExtensions.Contains(Path.GetExtension(f)));
 
-          options ??= new();
-          /// try to get an default icon, or set it to default(ghost) and make it so it doesn't display by default either.
-          string iconInfoString;
-          // check fist if we have a string to fetch the icon.
-          if (((iconInfoString = config.TryGetValue<string>(DefaultSpriteConfigOptionKey)?.ToLower()) != null)
-          // if that fails, try to get a file with the desired name from the same folder as the config.
-          || (iconInfoString = new DirectoryInfo(externalFileLocation).GetFiles($"{name}.*")
-            .Where(f => ValidDefaultImageExtensions.Contains(f.Extension)).FirstOrDefault()?.FullName) != null
-          ) {
-            Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
-            if (Icon.Porter._isValidImageImportString(iconInfoString, out _)) {
-              options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
-                iconInfoString,
-                options
-                  .Append(NameConfigKey, name)
-                  .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
-                  .ToDictionary(e => e.Key, e => e.Value)
-              ).FirstOrDefault());
-            } // if it's not a valid URI for an image import, check if it's an known archetype:
-            else {
-              options.Add(nameof(SpriteDisplayOptions.DefaultIconType), Entity.Icon.Types.TryToGet(iconInfoString));
-            }
-          }
+        (string resourceName, string packageName, string resourceKey)
+          = ConstructArchetypeKeys(defaultIconFileLocatorString ?? assetFiles.First(), options, config);
 
-          // if there's an archetype base to use as a template, try to use it with the default ctor, and add any components:
-          if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, out JToken foundArchetypeName)) {
-            if (Entity.Types.TryToGet(foundArchetypeName.Value<string>(), out var foundBaseArchetype)) {
-              var ctor = foundBaseArchetype.Type.GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new System.Type[] {
-                typeof(string),
-                typeof(Entity.Type.Identity)
-              }, null);
-              if (ctor is not null && ctor.IsFamily) {
-                @return =
-                  (Entity.Type)ctor.Invoke(new object[] {
-                    resourceKey,
-                    new Type.Identity(name, packageKey)
-                  });
-              } else throw new ArgumentException(
-                  $"Cannot use Archetype of Entity.Type: {foundArchetypeName} as a template for a new of Entity.Type, it does not have a protected constructor that takes a resource key and an Entity.Type.Identity."
-                );
-            } else throw new ArgumentException(
-              $"Cannot find an Archetype of type Entity.Type with key: {foundArchetypeName}."
-            );
-          } // no template, make a basic type.
-          else {
-            @return =
-              new Entity.Type(
-                name,
-                resourceKey,
-                packageKey,
-                config,
-                options
-              );
-          }
-        }
-        /// check if it's a valid image type and import that way instead
-        else if (ValidDefaultImageExtensions.Contains(extension)) {
-          // import it as the default icon if it was found:
-          Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
-          if (Icon.Porter._isValidImageImportString(externalFileLocation, out _)) {
-            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
-              externalFileLocation,
-              options
-                .Append(NameConfigKey, name)
-                .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
-                .ToDictionary(e => e.Key, e => e.Value)
-            ).FirstOrDefault());
+        if (defaultIconFileLocatorString != null) {
+          Icon.Type defaultIconType = Universe.GetModData().GetPorterFor<Icon.Type>().ImportAndBuildNewArchetypesFromLooseFilesAndFolders(
+             defaultIconFileLocatorString.AsSingleItemEnumerable(),
+             options
+                .Append(PackageNameConfigKey, packageName),
+             out HashSet<string> processedDefaultIconFiles
+           ).First();
 
-            @return =
-              new Entity.Type(
-                name,
-                resourceKey,
-                packageKey,
-                new JObject(),
-                options
-              );
-          }
+          options.Add(nameof(SpriteDisplayOptions.DefaultIconType), defaultIconType);
+          allProcessedFiles.AddRange(processedDefaultIconFiles);
         }
 
-        return @return
-          .AsSingleItemEnumerable();
+        // check if this is built using a base.
+        if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, out JToken foundArchetypeName)) {
+          if (Entity.Types.TryToGet(foundArchetypeName.Value<string>(), out Type foundBaseArchetype)) {
+            options.Add(EntityBaseArchetypeConfigOptionKey, foundBaseArchetype);
+          } else throw new ArgumentException($"Cannot find an Archetype of type Entity.Type with key: {foundArchetypeName}.");
+        }
+
+        processedFiles = allProcessedFiles;
+        return BuildArchetypeFromCompiledData(resourceName, packageName, resourceKey, new JObject(), options, Universe);
       }
 
       ///<summary><inheritdoc/></summary>
-      protected override IEnumerable<Type> _importArchetypesFromExternalFiles(
-        string[] externalFileLocations,
-        string resourceKey,
-        string name,
-        string packageKey = null,
-        Dictionary<string, object> options = null
+      protected override IEnumerable<Type> BuildLooselyFromAssets(
+        IEnumerable<string> assetFiles,
+        Dictionary<string, object> options,
+        out IEnumerable<string> processedFiles
       ) {
-        Type @return = null;
-        JObject config = TryToGetConfig(externalFileLocations, out string configFileLocation);
+        List<string> allProcessedFiles = new();
 
-        resourceKey = CorrectBaseKeysAndNamesForConfigValues(
-          configFileLocation,
-          ref name,
-          ref packageKey,
-          config
-        );
+        /// Just the icon for loose files.
+        string defaultIconFileLocatorString 
+          = assetFiles.FirstOrDefault(f => PorterExtensions.ValidImageExtensions.Contains(Path.GetExtension(f)));
 
-        options ??= new();
-        /// try to get an default icon, or set it to default(ghost) and make it so it doesn't display by default either.
-        string iconInfoString;
-        // check fist if we have a string to fetch the icon.
-        if (((iconInfoString = config.TryGetValue<string>(DefaultSpriteConfigOptionKey)?.ToLower()) != null)
-          // if that fails, try to get a file with the desired name from the same folder as the config.
-          || ((iconInfoString = externalFileLocations.Where(file => Path.GetFileName(file).StartsWith($"{name}."))
-            .Where(f => ValidDefaultImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null)
-          // without the same name, get the first matching image
-          || ((iconInfoString = externalFileLocations.Where(f => ValidDefaultImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null)
-        ) {
-          Icon.Porter iconImporter = (ArchetypePorter<Entity.Icon.Type>.DefaultInstance as Entity.Icon.Porter);
-          if (Icon.Porter._isValidImageImportString(iconInfoString, out _)) {
-            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), iconImporter.ImportAndBuildNewArchetypeFromFile(
-              iconInfoString,
-              options
-                .Append(NameConfigKey, name)
-                .Append(PackageNameConfigKey, packageKey ?? iconImporter.DefaultPackageName)
-                .ToDictionary(e => e.Key, e => e.Value)
-            ).FirstOrDefault());
-          } // if it's not a valid URI for an image import, check if it's an known archetype:
-          else {
-            options.Add(nameof(SpriteDisplayOptions.DefaultIconType), Entity.Icon.Types.TryToGet(iconInfoString));
+        if (defaultIconFileLocatorString != null) {
+          (string resourceName, string packageName, string resourceKey)
+            = ConstructArchetypeKeys(defaultIconFileLocatorString ?? assetFiles.First(), options, null);
+
+          Icon.Type defaultIconType = Universe.GetModData().GetPorterFor<Icon.Type>().ImportAndBuildNewArchetypesFromLooseFilesAndFolders(
+             defaultIconFileLocatorString.AsSingleItemEnumerable(),
+             options,
+             out HashSet<string> processedDefaultIconFiles
+           ).First();
+
+          options.Add(nameof(SpriteDisplayOptions.DefaultIconType), defaultIconType);
+          allProcessedFiles.AddRange(processedDefaultIconFiles);
+
+          processedFiles = allProcessedFiles;
+          return BuildArchetypeFromCompiledData(resourceName, packageName, resourceKey, new JObject(), options, Universe);
+        } else throw new ArgumentException($"Without a config; Entities can only import a single default icon image.");
+      }
+
+      ///<summary><inheritdoc/></summary>
+      protected override IEnumerable<Type> BuildArchetypeFromCompiledData(
+        string resourceName,
+        string packageName,
+        string resourceKey,
+        JObject config,
+        Dictionary<string, object> importOptionsAndAssets,
+        Universe universe
+      ) {
+        if (importOptionsAndAssets.TryGetValue(EntityBaseArchetypeConfigOptionKey, out var found) && found is Entity.Type entityBaseArchetype) {
+          // if there's an archetype base, use it.
+          var ctor = GetPorterConstructorForArchetypeType(entityBaseArchetype.Type);
+          try {
+            return
+              ((Entity.Type)ctor.Invoke(new object[] {
+                resourceName, packageName, resourceKey, config, importOptionsAndAssets, universe
+              })).AsSingleItemEnumerable();
           }
-        }
-
-        // if there's an archetype base to use as a template, try to use it with the default ctor, and add any components:
-        if (config.TryGetValue(EntityBaseArchetypeConfigOptionKey, out JToken foundArchetypeName)) {
-          if (Entity.Types.TryToGet(foundArchetypeName.Value<string>(), out var foundBaseArchetype)) {
-            var ctor = foundBaseArchetype.Type.GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new System.Type[] {
-                typeof(string),
-                typeof(Entity.Type.Identity)
-              }, null);
-            if (ctor is not null && ctor.IsFamily) {
-              @return =
-                (Entity.Type)ctor.Invoke(new object[] {
-                    resourceKey,
-                    new Type.Identity(name, packageKey)
-                });
-            } else throw new ArgumentException(
-                $"Cannot use Archetype of Entity.Type: {foundArchetypeName} as a template for a new of Entity.Type, it does not have a protected constructor that takes a resource key and an Entity.Type.Identity."
-              );
-          } else throw new ArgumentException(
-            $"Cannot find an Archetype of type Entity.Type with key: {foundArchetypeName}."
-          );
-        } // no template, make a basic type.
-        else {
-          @return =
-            new Entity.Type(
-              name,
-              resourceKey,
-              packageKey,
-              config,
-              options
+          catch (Exception e) {
+            throw new ArgumentException(
+              $"Cannot use Archetype of Entity.Type: {entityBaseArchetype} as a template for a new of Entity.Type, it does not have a protected constructor that matches the IPortableArchetype pattern.",
+              e
             );
-        }
-
-        return @return.AsSingleItemEnumerable();
+          }
+        } // if there's no base, build normally
+        else return base.BuildArchetypeFromCompiledData(resourceName, packageName, resourceKey, config, importOptionsAndAssets, universe);
       }
 
       ///<summary><inheritdoc/></summary>
@@ -299,7 +203,7 @@ namespace Overworld.Data {
         List<string> createdFiles = new();
 
         // Save the config file:
-        string configFileName = Path.Combine(packageDirectoryPath, IArchetypePorter.ConfigFileName);
+        string configFileName = Path.Combine(packageDirectoryPath, DefaultConfigFileName);
         JObject config = archetype.GenerateConfig();
 
         File.WriteAllText(configFileName, config.ToString());
