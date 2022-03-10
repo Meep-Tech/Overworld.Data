@@ -135,8 +135,12 @@ namespace Overworld.Data {
         Dictionary<string, object> importOptionsAndObjects,
         Universe universe = null
       ) : this(name, packageKey, resourceKey, universe) {
-        LinkArchetypeToTileDataOnSet = config.TryGetValue<bool>(nameof(LinkArchetypeToTileDataOnSet));
-        _ignoreDuringModReSerialization = config.TryGetValue<bool>(nameof(_ignoreDuringModReSerialization));
+        LinkArchetypeToTileDataOnSet = 
+          importOptionsAndObjects.TryGetValue(nameof(LinkArchetypeToTileDataOnSet), out var foundLinkValue) 
+            && (bool)foundLinkValue;
+        _ignoreDuringModReSerialization =
+          importOptionsAndObjects.TryGetValue(nameof(_ignoreDuringModReSerialization), out var foundIgnoreReserializeValue) 
+            && (bool)foundIgnoreReserializeValue;
         Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
         _defaultTags = config.TryGetValue(Porter.TagsConfigOptionKey, @default: Enumerable.Empty<Tag>()).ToHashSet();
         Description = config.TryGetValue<string>(Porter.DescriptionConfigKey);
@@ -151,9 +155,7 @@ namespace Overworld.Data {
             ? (Hash128)hashKey
             : DefaultBackground.GetTileHash();
         }
-        DefaultHeight = config.TryGetValue(Porter.TileHeightConfigKey, out JToken value)
-          ? value.Value<float>()
-          :  DefaultHeight;
+        DefaultHeight = config.TryGetValue<float?>(Porter.TileHeightConfigKey) ?? DefaultHeight;
       }
 
       ///<summary><inheritdoc/></summary>

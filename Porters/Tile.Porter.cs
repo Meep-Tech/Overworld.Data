@@ -44,12 +44,12 @@ namespace Overworld.Data {
           .Append(DescriptionConfigKey)
           .Append(ImportModeConfigKey)
           .Append(SheetSizeInTilesConfigKey)
-          .Append(TagsConfigOptionKey) 
+          .Append(TagsConfigOptionKey)
           .Append(UseDefaultBackgroundAsInWorldTileImageConfigKey)
           .Append(TileHeightConfigKey);
 
       ///<summary><inheritdoc/></summary>
-      public override HashSet<string> ValidImportOptionKeys 
+      public override HashSet<string> ValidImportOptionKeys
         => base.ValidImportOptionKeys
           .Append(PorterExtensions.PixelsPerTileImportOptionKey)
           .Append(ProvidedSheetDimensionsOption)
@@ -73,13 +73,13 @@ namespace Overworld.Data {
       /// <summary>
       /// Key for the tile height
       /// </summary>
-      public const string TileHeightConfigKey 
+      public const string TileHeightConfigKey
         = "height";
 
       /// <summary>
       /// Key used to pass in how large the tile sheet is in tiles
       /// </summary>
-      public const string SheetSizeInTilesConfigKey 
+      public const string SheetSizeInTilesConfigKey
         = "sizeInTiles";
 
       /// <summary>
@@ -91,23 +91,32 @@ namespace Overworld.Data {
       /// <summary>
       /// The config key for the mode used to import the image.
       /// </summary>
-      public const string ImportModeConfigKey 
+      public const string ImportModeConfigKey
         = "mode";
 
       /// <summary>
       /// Make a new tile importer. This is made at startup.
       /// TODO: these should be singletons probably.
       /// </summary>
-      public Porter(User currentUser) 
+      public Porter(User currentUser)
         : base(() => currentUser.UniqueName) { }
 
       ///<summary><inheritdoc/></summary>
       protected override IEnumerable<Type> BuildLooselyFromConfig(JObject config, IEnumerable<string> assetFiles, Dictionary<string, object> options, out IEnumerable<string> processedFiles) {
         string imageFile = this.GetDefaultImageFromAssets(assetFiles, options, config);
+        Texture2D webTexture = null;
+        if (this.IsValidImageImportString(imageFile, out ImageImportStringType? type)) {
+          if (type == ImageImportStringType.LocalRelative) {
+            imageFile = this.ExpandImageImportString(imageFile, Path.GetDirectoryName(assetFiles.First()));
+          }
+          else if (type == ImageImportStringType.Http) {
+            webTexture = this.GetTextureFromHttpImportString(imageFile);
+          }
+        }
 
         (string resourceName, string packageName, string resourceKey)
           = ConstructArchetypeKeys(imageFile ?? assetFiles.First(), options, config);
-        
+
         int? diameter = config.TryGetValue<int?>(PorterExtensions.PixelsPerTileConfigKey);
 
         Vector2? dimensionsInTiles = config.TryGetValue<Vector2?>(SheetSizeInTilesConfigKey)
@@ -124,21 +133,35 @@ namespace Overworld.Data {
         }
 
         (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
-          = _importUnityTilesFrom(
-            imageFile,
-            diameter,
-            config.TryGetValue(ImportModeConfigKey, StringComparison.OrdinalIgnoreCase, out JToken enumValue)
-              && enumValue.Value<BackgroundImageImportMode>() == BackgroundImageImportMode.Individual,
-            dimensionsInTiles
-          );
+          = webTexture is null
+          ? _importUnityTilesFrom(
+              imageFile,
+              diameter,
+              config.TryGetValue(ImportModeConfigKey, StringComparison.OrdinalIgnoreCase, out JToken enumValue)
+                && enumValue.Value<BackgroundImageImportMode>() == BackgroundImageImportMode.Individual,
+              dimensionsInTiles
+            )
+          : _importUnityTilesFrom(
+              webTexture,
+              diameter,
+              config.TryGetValue(ImportModeConfigKey, StringComparison.OrdinalIgnoreCase, out JToken enumValue2)
+                && enumValue2.Value<BackgroundImageImportMode>() == BackgroundImageImportMode.Individual,
+              dimensionsInTiles
+            );
 
         int? index = null;
         if (all.Count > 1) {
           index = 0;
         }
 
-        bool hasHeight = config.HasProperty(TileHeightConfigKey);
+        /// check if there are "special" tile values that need to be added to another type too.
+        bool hasHeight = config.HasProperty(TileHeightConfigKey, out string heightKey);
         bool hasSpecialValues = hasHeight;
+        JObject specialConfig = hasSpecialValues ? JObject.Parse(config.ToString()) : null;
+        if (hasSpecialValues) {
+          config.Remove(heightKey);
+        }
+
         // One for the bg
         Dictionary<string, Type> @return = all.ToDictionary(tile => tile.Key.ToString() + (hasSpecialValues ? " (BG)" : ""), tile => {
           Dictionary<string, object> localOptions = new(options ?? new());
@@ -172,7 +195,7 @@ namespace Overworld.Data {
               resourceName + (index is not null ? $" - {++index}" : ""),
               packageName,
               resourceKey + (index is not null ? $" - {index}" : ""),
-              config,
+              specialConfig,
               localOptions,
               Universe
             ).First();
@@ -199,6 +222,15 @@ namespace Overworld.Data {
       protected override IEnumerable<Type> BuildLooselyFromAssets(IEnumerable<string> assetFiles, Dictionary<string, object> options, out IEnumerable<string> processedFiles) {
         string imageFile = this.GetDefaultImageFromAssets(assetFiles, options)
           ?? throw new ArgumentException($"No default image file found. Tiles with no config require a valid default image");
+        Texture2D webTexture = null;
+        if (this.IsValidImageImportString(imageFile, out ImageImportStringType? type)) {
+          if (type == ImageImportStringType.LocalRelative) {
+            imageFile = this.ExpandImageImportString(imageFile, Path.GetDirectoryName(assetFiles.First()));
+          }
+          else if (type == ImageImportStringType.Http) {
+            webTexture = this.GetTextureFromHttpImportString(imageFile);
+          }
+        }
 
         (string resourceName, string packageName, string resourceKey)
           = ConstructArchetypeKeys(imageFile, options, null);
@@ -209,18 +241,25 @@ namespace Overworld.Data {
 
         int? diameter;
         if (dimensionsInTiles.HasValue) {
-            diameter = null;
+          diameter = null;
         }
         else
           diameter = (int)options[PorterExtensions.PixelsPerTileImportOptionKey];
 
         (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations)
-          = _importUnityTilesFrom(
-            imageFile,
-            diameter,
-            false,
-            dimensionsInTiles
-          );
+          = webTexture is null
+          ? _importUnityTilesFrom(
+              imageFile,
+              diameter,
+              false,
+              dimensionsInTiles
+            )
+          : _importUnityTilesFrom(
+              webTexture,
+              diameter,
+              false,
+              dimensionsInTiles
+            );
 
         int? index = null;
         if (all.Count > 1) {
@@ -267,7 +306,7 @@ namespace Overworld.Data {
         List<string> createdFiles = new();
 
         // some types are saved along with other types so we ignore them.
-        if(!archetype._ignoreDuringModReSerialization) {
+        if (!archetype._ignoreDuringModReSerialization) {
           Directory.CreateDirectory(packageDirectoryPath);
           //// tile needs to save the sprite, and the config.json
           /// get the image data
@@ -278,7 +317,7 @@ namespace Overworld.Data {
           string imageFileName;
           if (imageData is not null) {
             imageFileName = Path.Combine(packageDirectoryPath, "texture.png");
-            File.WriteAllBytes(imageFileName, imageData); 
+            File.WriteAllBytes(imageFileName, imageData);
             createdFiles.Add(imageFileName);
           }
 
@@ -298,28 +337,21 @@ namespace Overworld.Data {
       }
 
       /// <summary>
-      /// Import a collection of tiles from an image location
+      /// Import a collection of tiles from an image
       /// </summary>
       (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all,
         Dictionary<Vector2Int, Hash128> locations
-      ) _importUnityTilesFrom(string imageLocation, int? tileWidthInPixels, bool isIndividual, Vector2? providedTileDimensions) {
-        Texture2D spriteSheet = new(2, 2);
-
-        var imageFile = new System.IO.FileInfo(imageLocation);
-        if (imageFile.Exists) {
-          byte[] imageBytes = File.ReadAllBytes(imageFile.FullName);
-          spriteSheet.LoadImage(imageBytes);
-        } else throw new ArgumentException($"Could not find file:{imageLocation}");
-
-        if(!tileWidthInPixels.HasValue) {
-          if(!providedTileDimensions.HasValue) {
+      ) _importUnityTilesFrom(Texture2D spriteSheet, int? tileWidthInPixels, bool isIndividual, Vector2? providedTileDimensions) {
+        if (!tileWidthInPixels.HasValue) {
+          if (!providedTileDimensions.HasValue) {
             tileWidthInPixels = spriteSheet.width;
-          } else {
+          }
+          else {
             tileWidthInPixels = (int)(spriteSheet.width / providedTileDimensions.Value.x);
           }
         }
 
-        if(isIndividual) {
+        if (isIndividual) {
           UnityEngine.Tilemaps.Tile tile = new() {
             sprite = Sprite.Create(
                 spriteSheet,
@@ -331,20 +363,21 @@ namespace Overworld.Data {
               )
           };
 
-          return (new Dictionary<Hash128, UnityEngine.Tilemaps.Tile> { 
-            { tile.GetTileHash(), tile } 
+          return (new Dictionary<Hash128, UnityEngine.Tilemaps.Tile> {
+            { tile.GetTileHash(), tile }
           }, new Dictionary<Vector2Int, Hash128> {
             {new Vector2Int(0,0),  tile.GetTileHash()}
           });
         }
 
         (int width, int height) sheetTileDimensions;
-        if(providedTileDimensions.HasValue) {
+        if (providedTileDimensions.HasValue) {
           sheetTileDimensions = (
-            (int)providedTileDimensions.Value.x, 
+            (int)providedTileDimensions.Value.x,
             (int)providedTileDimensions.Value.y
           );
-        } else {
+        }
+        else {
           // get how many sprites are in the sheet in the height and width dimensions
           sheetTileDimensions = (
             spriteSheet.width / tileWidthInPixels.Value,
@@ -354,7 +387,7 @@ namespace Overworld.Data {
           int trimX = spriteSheet.width % tileWidthInPixels.Value;
           int trimY = spriteSheet.height % tileWidthInPixels.Value;
 
-          if(trimX > 0 || trimY > 0) {
+          if (trimX > 0 || trimY > 0) {
             // WARN the user here too:
           }
         }
@@ -362,8 +395,8 @@ namespace Overworld.Data {
         (Dictionary<Hash128, UnityEngine.Tilemaps.Tile> all, Dictionary<Vector2Int, Hash128> locations) @return
           = (new(), new());
 
-        for(int x = 0; x < sheetTileDimensions.width; x++) {
-          for(int y = 0; y < sheetTileDimensions.height; y++) {
+        for (int x = 0; x < sheetTileDimensions.width; x++) {
+          for (int y = 0; y < sheetTileDimensions.height; y++) {
             Texture2D subMap = new(tileWidthInPixels.Value, tileWidthInPixels.Value);
             Color[] colors = spriteSheet.GetPixels(
               x * tileWidthInPixels.Value,
@@ -376,23 +409,25 @@ namespace Overworld.Data {
             );
             subMap.Apply();
 
-            UnityEngine.Tilemaps.Tile tile 
+            UnityEngine.Tilemaps.Tile tile
               = ScriptableObject.CreateInstance<UnityEngine.Tilemaps.Tile>();
             tile.sprite = Sprite.Create(
               subMap,
-              new Rect(0,0, tileWidthInPixels.Value, tileWidthInPixels.Value),
+              new Rect(0, 0, tileWidthInPixels.Value, tileWidthInPixels.Value),
               new Vector2(0.5f, 0.5f),
               tileWidthInPixels.Value
             );
             Hash128 tileHash = tile.GetTileHash();
             // see if this tile already exists in this world:
-            if(@return.all.TryGetValue(tileHash, out _)) {
+            if (@return.all.TryGetValue(tileHash, out _)) {
               ScriptableObject.Destroy(tile);
               //tile = foundLocal;
-            } else if(@return.all.TryGetValue(tileHash, out _)) {
+            }
+            else if (@return.all.TryGetValue(tileHash, out _)) {
               ScriptableObject.Destroy(tile);
               //tile = existing;
-            } else 
+            }
+            else
               @return.all.Add(tileHash, tile);
 
             @return.locations.Add(new(x, y), tileHash);
@@ -400,6 +435,24 @@ namespace Overworld.Data {
         }
 
         return @return;
+      }
+
+      /// <summary>
+      /// Import a collection of tiles from an image location
+      /// </summary>
+      (IReadOnlyDictionary<Hash128, UnityEngine.Tilemaps.Tile> all,
+        Dictionary<Vector2Int, Hash128> locations
+      ) _importUnityTilesFrom(string imageLocation, int? tileWidthInPixels, bool isIndividual, Vector2? providedTileDimensions) {
+        Texture2D spriteSheet = new(2, 2);
+
+        var imageFile = new System.IO.FileInfo(imageLocation);
+        if (imageFile.Exists) {
+          byte[] imageBytes = File.ReadAllBytes(imageFile.FullName);
+          spriteSheet.LoadImage(imageBytes);
+        }
+        else throw new ArgumentException($"Could not find file:{imageLocation}");
+
+        return _importUnityTilesFrom(spriteSheet, tileWidthInPixels, isIndividual, providedTileDimensions);
       }
     }
   }

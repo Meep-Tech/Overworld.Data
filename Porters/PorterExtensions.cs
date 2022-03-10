@@ -62,7 +62,7 @@ namespace Overworld.Data.IO {
 
     /// <summary>
     /// Helper to the default image from the assets based on the config, options, and valid image extension values.
-    /// </summary>\
+    /// </summary>
     public static string GetDefaultImageFromAssets(this ArchetypePorter porter, IEnumerable<string> assetFiles, Dictionary<string, object> options, JObject config = null) {
       string imageFile;
 
@@ -80,12 +80,28 @@ namespace Overworld.Data.IO {
           .Where(f => ValidImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null
         ) {
           return imageFile;
+        } // else try to get a file with the same name as the config itself.
+        else if ((imageFile = _tryToGetAssetWithTheSameNameAsConfig(assetFiles.First(), assetFiles)) != null) {
+          return imageFile;
         } // else try to get a file from the provided assets with the correct extension only.
         else if ((imageFile = assetFiles.Where(f => ValidImageExtensions.Contains(Path.GetExtension(f))).FirstOrDefault()) != null) {
           return imageFile;
         }
       }
       
+      return null;
+    }
+
+    static string _tryToGetAssetWithTheSameNameAsConfig(string configFile, IEnumerable<string> assetFiles) {
+      string configFileName = Path.GetFileNameWithoutExtension(configFile);
+      foreach (string file in assetFiles) {
+        if (Path.GetFileName(file).StartsWith(configFileName + ".")) {
+          if (ValidImageExtensions.Contains(Path.GetExtension(file))) {
+            return file;
+          }
+        }
+      }
+
       return null;
     }
 
@@ -119,6 +135,21 @@ namespace Overworld.Data.IO {
     }
 
     /// <summary>
+    /// Expad an image import string to a full file location.
+    /// </summary>
+    public static string ExpandImageImportString(this ArchetypePorter porter, string imageFileLocationString, string accessedFromFolder = null, ImageImportStringType? importStringType = null) {
+      if (importStringType is not null || porter.IsValidImageImportString(imageFileLocationString, out importStringType)) {
+        return importStringType switch {
+          // get the image from the web or absolute
+          ImageImportStringType.Http or ImageImportStringType.LocalAbsolute => imageFileLocationString,
+          // relative to the current folder
+          ImageImportStringType.LocalRelative => Path.GetFullPath(Path.Combine(accessedFromFolder, imageFileLocationString)),
+          _ => throw new Exception(),
+        };
+      } else throw new Exception();
+    }
+
+    /// <summary>
     /// Gets a local file location for a given image import string.
     /// </summary>
     /// <param name="imageFileLocationString">The image path</param>
@@ -129,37 +160,23 @@ namespace Overworld.Data.IO {
         switch (importStringType) {
           // get the image from the web!
           case ImageImportStringType.Http:
-            options[ArchetypePorter.MoveFinishedFilesToFinishedImportsFolderSetting]
-              = false;
-            var extension = Path.GetExtension(imageFileLocationString);
-            // if it's a valid extension, download it as the image
-            if (PorterExtensions.ValidImageExtensions.Contains(extension)) {
-              using (Stream stream = new WebClient().OpenRead(imageFileLocationString)) {
-                using (var memoryStream = new MemoryStream()) {
-                  stream.CopyTo(memoryStream);
-                  Texture2D texture = new(2, 2);
-                  texture.LoadImage(memoryStream.ToArray());
-                  return Sprite.Create(
-                    texture,
-                    new Rect(
-                      0,
-                      0,
-                      texture.width,
-                      texture.height
-                    ),
-                    new Vector2(0.5f, 0.5f),
-                    (int)options[PorterExtensions.PixelsPerTileImportOptionKey]
-                  );
-                }
-              }
-            }
-
-            throw new System.ArgumentException($"Invalid file extension: {extension}");
+            var texture = porter.GetTextureFromHttpImportString(imageFileLocationString);
+            return Sprite.Create(
+              texture,
+              new Rect(
+                0,
+                0,
+                texture.width,
+                texture.height
+              ),
+              new Vector2(0.5f, 0.5f),
+              (int)options[PorterExtensions.PixelsPerTileImportOptionKey]
+            );
 
           /// These ones will copy the file to the new desired location.
           //relative to the current folder
           case ImageImportStringType.LocalRelative:
-            absoluteImageFilePath = Path.Combine(accessedFromFolder, absoluteImageFilePath);
+            absoluteImageFilePath = Path.GetFullPath(Path.Combine(accessedFromFolder, absoluteImageFilePath));
             break;
 
           // try to get the absolute file path
@@ -184,6 +201,27 @@ namespace Overworld.Data.IO {
       }
 
       return null;
+    }
+
+    /// <summary>
+    /// Get a unity texture 2d from an import string of type http.
+    /// </summary>
+    public static Texture2D GetTextureFromHttpImportString(this ArchetypePorter porter, string imageFileLocationString) {
+      var extension = Path.GetExtension(imageFileLocationString);
+      // if it's a valid extension, download it as the image
+      if (PorterExtensions.ValidImageExtensions.Contains(extension)) {
+        using (Stream stream = new WebClient().OpenRead(imageFileLocationString)) {
+          using (var memoryStream = new MemoryStream()) {
+            stream.CopyTo(memoryStream);
+            Texture2D texture = new(2, 2);
+            texture.LoadImage(memoryStream.ToArray());
+
+            return texture;
+          }
+        }
+      }
+
+      throw new System.ArgumentException($"Invalid file extension: {extension}");
     }
   }
 }
